@@ -40,7 +40,7 @@ const profileImage= `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}
         email,
         password,
         profileImage,
-       })
+       });
 
        await user.save();
 
@@ -51,7 +51,8 @@ const profileImage= `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}
             _id: user._id,
             username: user.username,
             email: user.email,
-            profileImage: user.profileImage
+            profileImage: user.profileImage,
+            createdAt: user.createdAt,
         },
        });
 
@@ -83,6 +84,7 @@ router.post("/login", async (req, res) => {
             username: user.username,
             email: user.email,
             profileImage: user.profileImage,
+            createdAt: user.createdAt,
         },
     });
 
