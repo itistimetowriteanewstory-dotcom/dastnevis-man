@@ -21,6 +21,20 @@ const bookSchema = new mongoose.Schema(
             min: 1,
             max: 5,
         },
+
+    phoneNumber: {
+      type: Number,
+      required: false,
+    },
+    jobtitle: {
+      type: String, // حذف enum
+      required: false,
+    },
+    income: { // فیلد جدید با نوع Number
+      type: Number,
+      required: false,
+    },
+
         user:{
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
