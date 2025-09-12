@@ -8,8 +8,8 @@ const router = express.Router();
 
 router.post("/", protectRoute, async (req, res) => {
     try {
-        const {title, caption, rating, image, phoneNumber, jobtitle, income} = req.body;
-   if(!image || !title || !caption || !phoneNumber || !income) {
+        const {title, caption, rating, image, phoneNumber, jobtitle, income, location} = req.body;
+   if(!image || !title || !caption || !phoneNumber || !income || !location) {
     return res.status(400).json({message: "please provide all fields"});
     }
 
@@ -26,6 +26,7 @@ router.post("/", protectRoute, async (req, res) => {
     phoneNumber,
     jobtitle,
     income,
+    location,
     user: req.user._id,
   })
 
