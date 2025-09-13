@@ -23,7 +23,7 @@ const bookSchema = new mongoose.Schema(
         },
 
     phoneNumber: {
-      type: Number,
+      type: String,
       required: false,
     },
     jobtitle: {

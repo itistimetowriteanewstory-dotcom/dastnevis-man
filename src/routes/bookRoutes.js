@@ -10,7 +10,7 @@ router.post("/", protectRoute, async (req, res) => {
     try {
         const {title, caption, rating, image, phoneNumber, jobtitle, income, location} = req.body;
    if(!image || !title || !caption || !phoneNumber || !income || !location) {
-    return res.status(400).json({message: "please provide all fields"});
+    return res.status(400).json({message: "همه خانه هارا پر کنید"});
     }
 
     //upload thr image to cloudinary
@@ -62,18 +62,18 @@ router.get("/", protectRoute, async (req, res)=>{
         });
     } catch (error) {
         console.log("error in get all books route");
-        res.status(500).json({message: "internal server"});
+        res.status(500).json({message: "خطای سرور"});
     }
 });
 
 router.delete("/:id", protectRoute, async (req, res) =>{
     try {
         const book = await Book.findById(req.params.id);
-        if(!book) return res.status(404).json({message: "book not found"});
+        if(!book) return res.status(404).json({message: "شغل پیدا نشد"});
 
         // check if user is the creater of the book 
         if(book.user.toString() !== req.user._id.toString())
-            return res.status(401).json({message: "un autherized"});
+            return res.status(401).json({message: "دسترسی غیر مجاز"});
 
         // delete image from cloudinary
         if(book.image && book.image.includes("cloudinary")){
@@ -86,22 +86,22 @@ router.delete("/:id", protectRoute, async (req, res) =>{
         }
 
         await book.deleteOne();
-       res.json({message: "book deleted succefully"});
+       res.json({message: "شغل با موفقیت حذف شد"});
 
     } catch (error) {
         console.log("errpr deleting book ");
-        res.status(500).json({message: "internal server error"});
+        res.status(500).json({message: "خطای سرور لطفا بعدا امتحان کنید"});
     }
 });
 
 // get recommended books by the loggged in user
 router.get("/user", protectRoute, async (req, res) =>{
     try {
-        const books = await Book.find({user: req.user._id}).sort({created_At: -1});
+        const books = await Book.find({user: req.user._id}).sort({createdAt: -1});
         res.json(books);
     } catch (error) {
         console.error("get user books erroe", error.message);
-        res.status(500).json({message: "server error"});
+        res.status(500).json({message: "خطای سرور"});
     }
 });
 
