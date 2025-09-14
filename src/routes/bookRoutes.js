@@ -13,6 +13,12 @@ router.post("/", protectRoute, async (req, res) => {
     return res.status(400).json({message: "همه خانه هارا پر کنید"});
     }
 
+    if (!image || typeof image !== "string" || !image.startsWith("data:image/")) {
+  console.log("فرمت تصویر نامعتبر یا ناقص:", image?.slice(0, 100));
+  return res.status(400).json({ message: "فرمت تصویر نامعتبر است یا تصویر ارسال نشده" });
+}
+
+
     //upload thr image to cloudinary
    const uploadResponce = await cloudinary.uploader.upload(image);
    const imageUrl = uploadResponce.secure_url
