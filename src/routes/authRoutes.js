@@ -1,6 +1,8 @@
 import express, { json } from "express";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import protectRoute from "../middleware/auth.middleware.js";
+
 const router = express.Router();
 
 const generateToken = (userId) =>{
@@ -93,6 +95,28 @@ router.post("/login", async (req, res) => {
     res.status(500).json({message: "خطای سرور لطفا بعدا امتحان کنید"});
   }
 });
+
+router.post("/save-token", protectRoute, async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "توکن معتبر نیست" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "کاربر پیدا نشد" });
+
+    user.expoPushToken = token;
+    await user.save();
+
+    res.status(200).json({ message: "توکن نوتیفیکیشن ذخیره شد" });
+  } catch (error) {
+    console.error("خطا در ذخیره توکن:", error.message);
+    res.status(500).json({ message: "خطای سرور" });
+  }
+});
+
 
 
 

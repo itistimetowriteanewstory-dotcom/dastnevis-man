@@ -70,6 +70,14 @@ for (const user of users) {
   await user.save();
 }
 
+if (messages.length > 0) {
+  try {
+    const ticketChunk = await expo.sendPushNotificationsAsync(messages);
+    console.log("Expo tickets:", ticketChunk);
+  } catch (error) {
+    console.error("Error sending notifications:", error);
+  }
+}
 
 
   res.status(201).json(newBook)
