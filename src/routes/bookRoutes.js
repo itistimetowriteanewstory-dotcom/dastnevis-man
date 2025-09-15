@@ -60,8 +60,8 @@ for (const user of users) {
   messages.push({
     to: user.expoPushToken,
     sound: 'default',
-    title: '📚 کتاب جدید اضافه شد!',
-    body: `کتاب "${newBook.title}" به لیست اضافه شد.`,
+    title: 'شغل جدیدی اضافه شد',
+    body: `شغل جدیدی "${newBook.title}" به لیست اضافه شد.`,
   });
 
   // اگر امروز نوتیف داده شده، شمارنده رو زیاد کن، وگرنه از ۱ شروع کن
