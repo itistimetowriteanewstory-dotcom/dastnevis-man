@@ -2,6 +2,9 @@ import express from "express";
 import cloudinary from "../lib/cloudinary.js"
 import Book from "../models/Book.js";
 import protectRoute from "../middleware/auth.middleware.js";
+import User from "../models/User.js";
+import { Expo } from "expo-server-sdk";
+
 
 
 const router = express.Router();
@@ -37,6 +40,37 @@ router.post("/", protectRoute, async (req, res) => {
   })
 
   await newBook.save();
+
+  const expo = new Expo();
+
+// بعد از ذخیره کتاب جدید
+const users = await User.find({}); // یا فیلتر خاصی برای کاربران فعال
+
+const messages = [];
+const today = new Date().toDateString();
+
+for (const user of users) {
+  if (!user.expoPushToken || !Expo.isExpoPushToken(user.expoPushToken)) continue;
+
+  const lastDate = user.lastNotificationDate?.toDateString();
+
+  // اگر امروز نوتیف داده شده و تعدادش به ۵ رسیده، دیگه نفرست
+  if (lastDate === today && user.notificationCount >= 5) continue;
+
+  messages.push({
+    to: user.expoPushToken,
+    sound: 'default',
+    title: '📚 کتاب جدید اضافه شد!',
+    body: `کتاب "${newBook.title}" به لیست اضافه شد.`,
+  });
+
+  // اگر امروز نوتیف داده شده، شمارنده رو زیاد کن، وگرنه از ۱ شروع کن
+  user.notificationCount = (lastDate === today) ? user.notificationCount + 1 : 1;
+  user.lastNotificationDate = new Date();
+  await user.save();
+}
+
+
 
   res.status(201).json(newBook)
 

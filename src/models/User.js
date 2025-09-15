@@ -22,6 +22,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    // 🔔 فیلدهای مربوط به نوتیفیکیشن
+  expoPushToken: {
+    type: String,
+    default: null
+  },
+  notificationCount: {
+    type: Number,
+    default: 0
+  },
+  lastNotificationDate: {
+    type: Date,
+    default: null
+  }
 }, {timestamps: true});
 
 // hash password before saving user to db
