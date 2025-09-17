@@ -15,6 +15,11 @@ router.post("/register", async (req, res) => {
         if(!username || !email || !password) {
             return res.status(400).json({message: "همه خانه هارا پر کنید"});
         }
+        // بررسی فرمت ایمیل
+       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "ایمیل معتبر نیست" });
+      }
 
         if(password.length < 6) {
             return res.status(400).json({message: "رمز عبور حداقل باید هفت کارکتر داشته باشد"});

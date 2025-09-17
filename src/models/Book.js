@@ -31,7 +31,7 @@ const bookSchema = new mongoose.Schema(
       required: false,
     },
     income: { // فیلد جدید با نوع Number
-      type: Number,
+      type: String,
       required: false,
     },
      location: {
