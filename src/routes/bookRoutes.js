@@ -21,6 +21,23 @@ router.post("/", protectRoute, async (req, res) => {
   return res.status(400).json({ message: "فرمت تصویر نامعتبر است یا تصویر ارسال نشده" });
 }
 
+ // 🔹 محدودیت روزانه ۳ کار
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const todayJobsCount = await Book.countDocuments({
+      user: req.user._id,
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    if (todayJobsCount >= 3) {
+      return res.status(403).json({ message: "شما فقط می‌توانید روزی ۳ شغل اضافه کنید" });
+    }
+
+
 
     //upload thr image to cloudinary
    const uploadResponce = await cloudinary.uploader.upload(image);
@@ -53,6 +70,8 @@ for (const user of users) {
   if (!user.expoPushToken || !Expo.isExpoPushToken(user.expoPushToken)) continue;
 
   const lastDate = user.lastNotificationDate?.toDateString();
+
+  if (user._id.toString() === req.user._id.toString()) continue;
 
   // اگر امروز نوتیف داده شده و تعدادش به ۵ رسیده، دیگه نفرست
   if (lastDate === today && user.notificationCount >= 5) continue;
