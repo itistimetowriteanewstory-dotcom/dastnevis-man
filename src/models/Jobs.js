@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const bookSchema = new mongoose.Schema(
+const jobSchema = new mongoose.Schema(
     {
         title: {
             type: String,
@@ -45,6 +45,6 @@ const bookSchema = new mongoose.Schema(
         },
     }, {timestamps: true}
 );
-const Book = mongoose.model("Book", bookSchema);
+const Job = mongoose.model("job", jobSchema);
 
-export default Book;
+export default Job;

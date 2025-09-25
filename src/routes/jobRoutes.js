@@ -1,6 +1,6 @@
 import express from "express";
 import cloudinary from "../lib/cloudinary.js"
-import Book from "../models/Book.js";
+import Job from "../models/Jobs.js";
 import protectRoute from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
 import { Expo } from "expo-server-sdk";
@@ -28,7 +28,7 @@ router.post("/", protectRoute, async (req, res) => {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    const todayJobsCount = await Book.countDocuments({
+    const todayJobsCount = await Job.countDocuments({
       user: req.user._id,
       createdAt: { $gte: startOfDay, $lte: endOfDay }
     });
@@ -44,7 +44,7 @@ router.post("/", protectRoute, async (req, res) => {
    const imageUrl = uploadResponce.secure_url
 
    //save to the data base
-  const newBook = new Book({
+  const newJob = new Job({
     title,
     caption,
     rating,
@@ -56,7 +56,7 @@ router.post("/", protectRoute, async (req, res) => {
     user: req.user._id,
   })
 
-  await newBook.save();
+  await newJob.save();
 
   const expo = new Expo();
 
@@ -80,7 +80,7 @@ for (const user of users) {
     to: user.expoPushToken,
     sound: 'default',
     title: 'شغل جدیدی اضافه شد',
-    body: `شغل جدیدی "${newBook.title}" به لیست اضافه شد.`,
+    body: `شغل جدیدی "${newJob.title}" به لیست اضافه شد.`,
   });
 
   // اگر امروز نوتیف داده شده، شمارنده رو زیاد کن، وگرنه از ۱ شروع کن
@@ -99,15 +99,15 @@ if (messages.length > 0) {
 }
 
 
-  res.status(201).json(newBook)
+  res.status(201).json(newJob)
 
     } catch (error) {
-        console.log("error creating book ", error);
+        console.log("error creating job ", error);
         res.status(500).json({message: error.message});
     }
 });
 
-// get all books
+// get all jobs
 router.get("/", protectRoute, async (req, res)=>{
     try {
 
@@ -115,59 +115,59 @@ router.get("/", protectRoute, async (req, res)=>{
      const limit = req.query.limit || 5;
      const skip = (page - 1) * limit;
 
-        const books = await Book.find().sort({ createdAt: -1})
+        const jobs = await Job.find().sort({ createdAt: -1})
         .skip(skip)
         .limit(limit)
         .populate("user", "username profileImage");
 
-        const total = await Book.countDocuments();
+        const total = await Job.countDocuments();
         res.send({
-            books,
+            jobs,
             currentPage: page,
-            totalBooks: total,
+            totalJobs: total,
             totalPages: Math.ceil(total / limit),
         });
     } catch (error) {
-        console.log("error in get all books route");
+        console.log("error in get all jobs route");
         res.status(500).json({message: "خطای سرور"});
     }
 });
 
 router.delete("/:id", protectRoute, async (req, res) =>{
     try {
-        const book = await Book.findById(req.params.id);
-        if(!book) return res.status(404).json({message: "شغل پیدا نشد"});
+        const job = await Job.findById(req.params.id);
+        if(!job) return res.status(404).json({message: "شغل پیدا نشد"});
 
-        // check if user is the creater of the book 
-        if(book.user.toString() !== req.user._id.toString())
+        // check if user is the creater of the job
+        if(job.user.toString() !== req.user._id.toString())
             return res.status(401).json({message: "دسترسی غیر مجاز"});
 
         // delete image from cloudinary
-        if(book.image && book.image.includes("cloudinary")){
+        if(job.image && job.image.includes("cloudinary")){
             try {
-                const publicId = book.image.split("/").pop().split(".")[0];
+                const publicId = job.image.split("/").pop().split(".")[0];
                 await cloudinary.uploader.destroy(publicId);
             } catch (deleteError) {
                 console.log("error deleting image from cloudinary", deleteError);
             }
         }
 
-        await book.deleteOne();
+        await job.deleteOne();
        res.json({message: "شغل با موفقیت حذف شد"});
 
     } catch (error) {
-        console.log("errpr deleting book ");
+        console.log("errpr deleting job ");
         res.status(500).json({message: "خطای سرور لطفا بعدا امتحان کنید"});
     }
 });
 
-// get recommended books by the loggged in user
+// get jobs by the loggged in user
 router.get("/user", protectRoute, async (req, res) =>{
     try {
-        const books = await Book.find({user: req.user._id}).sort({createdAt: -1});
-        res.json(books);
+        const jobs = await Job.find({user: req.user._id}).sort({createdAt: -1});
+        res.json(jobs);
     } catch (error) {
-        console.error("get user books erroe", error.message);
+        console.error("get user jobs erroe", error.message);
         res.status(500).json({message: "خطای سرور"});
     }
 });
