@@ -15,27 +15,22 @@ const jobSchema = new mongoose.Schema(
             required: true,
 
         },
-        rating: {
-            type: Number,
-            required: false,
-            min: 1,
-            max: 5,
-        },
-
+       
+        
     phoneNumber: {
       type: String,
       required: false,
     },
     jobtitle: {
-      type: String, // حذف enum
+      type: String, 
       required: false,
     },
-    income: { // فیلد جدید با نوع Number
+    income: { 
       type: String,
       required: false,
     },
      location: {
-      type: String, // حذف enum
+      type: String, 
       required: false,
      },
         user:{

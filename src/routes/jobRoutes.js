@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.post("/", protectRoute, async (req, res) => {
     try {
-        const {title, caption, rating, image, phoneNumber, jobtitle, income, location} = req.body;
+        const {title, caption, image, phoneNumber, jobtitle, income, location} = req.body;
    if(!image || !title || !caption || !phoneNumber || !income || !location) {
     return res.status(400).json({message: "همه خانه هارا پر کنید"});
     }
@@ -33,7 +33,7 @@ router.post("/", protectRoute, async (req, res) => {
       createdAt: { $gte: startOfDay, $lte: endOfDay }
     });
 
-    if (todayJobsCount >= 3) {
+    if (todayJobsCount >= 6) {
       return res.status(403).json({ message: "شما فقط می‌توانید روزی ۳ شغل اضافه کنید" });
     }
 
@@ -47,7 +47,6 @@ router.post("/", protectRoute, async (req, res) => {
   const newJob = new Job({
     title,
     caption,
-    rating,
     image: imageUrl,
     phoneNumber,
     jobtitle,
