@@ -33,7 +33,7 @@ router.post("/", protectRoute, async (req, res) => {
       createdAt: { $gte: startOfDay, $lte: endOfDay }
     });
 
-    if (todayJobsCount >= 6) {
+    if (todayJobsCount >= 3) {
       return res.status(403).json({ message: "شما فقط می‌توانید روزی ۳ شغل اضافه کنید" });
     }
 
@@ -59,7 +59,7 @@ router.post("/", protectRoute, async (req, res) => {
 
   const expo = new Expo();
 
-// بعد از ذخیره کتاب جدید
+// بعد از ذخیره 
 const users = await User.find({}); // یا فیلتر خاصی برای کاربران فعال
 
 const messages = [];
