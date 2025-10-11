@@ -1,9 +1,10 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import authRoutes from "./routes/authRoutes.js"
+import authRoutes from "./routes/authRoutes.js";
 import { connectDB } from "./lib/db.js";
 import jobRoutes from "./routes/jobRoutes.js";
+import property from "./routes/property.js";
 
 
 const app = express();
@@ -14,6 +15,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
+app.use("/api/properties", property); // 🔹 اضافه شد
+
 
 
 
