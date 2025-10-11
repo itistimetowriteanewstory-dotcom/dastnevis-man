@@ -10,9 +10,9 @@ const router = express.Router();
 // 📌 ایجاد آگهی ملک جدید
 router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, type, price, rentPrice, mortgagePrice, location, description, image } = req.body;
+    const { title, type, price, rentPrice, mortgagePrice,  phoneNumber, location, description, image, area } = req.body;
 
-    if (!title || !type || !location) {
+    if (!title || !type || !location || !phoneNumber) {
       return res.status(400).json({ message: "عنوان، نوع و موقعیت الزامی هستند" });
     }
 
@@ -32,6 +32,8 @@ router.post("/", protectRoute, async (req, res) => {
       mortgagePrice,
       location,
       description,
+       phoneNumber,
+        area,
       images: imageUrl ? [imageUrl] : [],
       user: req.user._id,
     });

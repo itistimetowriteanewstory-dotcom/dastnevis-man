@@ -8,7 +8,7 @@ const propertySchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      
+
       required: true,
     },
     price: {
@@ -28,6 +28,10 @@ const propertySchema = new mongoose.Schema(
       type: String, // ساده مثل مدل Job (بعداً می‌تونی آبجکت یا مختصات بذاری)
       required: true,
     },
+    area: {
+  type: Number,
+  required: false, // یا true اگر اجباری باشه
+},
     description: {
       type: String,
     },
