@@ -35,11 +35,10 @@ const propertySchema = new mongoose.Schema(
     description: {
       type: String,
     },
-    images: [
-      {
+    images: {
         type: String, // لینک عکس‌ها
       },
-    ],
+
      phoneNumber: {   // 🔹 شماره تماس اضافه شد
       type: String,
       required: true,
