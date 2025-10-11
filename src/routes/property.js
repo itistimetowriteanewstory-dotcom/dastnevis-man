@@ -34,7 +34,7 @@ router.post("/", protectRoute, async (req, res) => {
       description,
        phoneNumber,
         area,
-      images: imageUrl ? [imageUrl] : [],
+      image: imageUrl || null,
       user: req.user._id,
     });
 
@@ -118,19 +118,17 @@ router.delete("/:id", protectRoute, async (req, res) => {
       return res.status(401).json({ message: "دسترسی غیر مجاز" });
     }
 
-    // حذف تصویر از Cloudinary
-    if (property.images.length > 0) {
-      for (const img of property.images) {
-        if (img.includes("cloudinary")) {
-          try {
-            const publicId = img.split("/").pop().split(".")[0];
-            await cloudinary.uploader.destroy(publicId);
-          } catch (deleteError) {
-            console.log("error deleting image from cloudinary", deleteError);
-          }
-        }
-      }
-    }
+   // delete image from cloudinary
+if (property.image && property.image.includes("cloudinary")) {
+  try {
+    const publicId = property.image.split("/").pop().split(".")[0];
+    await cloudinary.uploader.destroy(publicId);
+  } catch (deleteError) {
+    console.log("error deleting image from cloudinary", deleteError);
+  }
+}
+
+
 
     await property.deleteOne();
     res.json({ message: "ملک با موفقیت حذف شد" });
