@@ -8,7 +8,7 @@ const propertySchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["rent", "mortgage", "sale"], // اجاره، رهن، فروش
+      
       required: true,
     },
     price: {
@@ -36,6 +36,10 @@ const propertySchema = new mongoose.Schema(
         type: String, // لینک عکس‌ها
       },
     ],
+     phoneNumber: {   // 🔹 شماره تماس اضافه شد
+      type: String,
+      required: true,
+},
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
