@@ -12,16 +12,16 @@ const propertySchema = new mongoose.Schema(
       required: true,
     },
     price: {
-      type: Number,
+      type: String,
       required: false,
     },
 
       rentPrice: { 
-        type: Number,
+        type: String,
         required: false 
     },
     mortgagePrice: { 
-        type: Number, 
+        type: String, 
         required: false 
     },
     location: {
@@ -29,7 +29,7 @@ const propertySchema = new mongoose.Schema(
       required: true,
     },
     area: {
-  type: Number,
+  type: String,
   required: false, // یا true اگر اجباری باشه
 },
     description: {

@@ -23,6 +23,20 @@ router.post("/", protectRoute, async (req, res) => {
       imageUrl = uploadResponse.secure_url;
     }
 
+    const todays = new Date();
+todays.setHours(0, 0, 0, 0);
+
+const countToday = await Property.countDocuments({
+  user: req.user._id,
+  createdAt: { $gte: todays }
+});
+
+if (countToday >= 5) {
+  return res.status(400).json({ message: "شما امروز حداکثر ۵ آگهی ملک می‌توانید ثبت کنید" });
+}
+
+
+
     // ذخیره در دیتابیس
     const newProperty = new Property({
       title,
