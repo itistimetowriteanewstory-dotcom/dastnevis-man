@@ -8,8 +8,13 @@ const savedAdSchema = new mongoose.Schema({
   },
   ad: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Ad", // یا مدل ملک/کار
-    required: true
+    required: true,
+    refPath: "adType"   // 👈 اینجا می‌گه ref وابسته به adType هست
+  },
+  adType: {
+    type: String,
+    required: true,
+    enum: ["job", "proprety"]  // 👈 اسم دقیق مدل‌هایی که ساختی
   },
   createdAt: {
     type: Date,
