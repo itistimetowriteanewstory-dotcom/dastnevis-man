@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import { connectDB } from "./lib/db.js";
 import jobRoutes from "./routes/jobRoutes.js";
 import property from "./routes/property.js";
+import savedAdsRoutes from "./routes/savedAds.js";
 
 
 const app = express();
@@ -16,7 +17,7 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/properties", property); // 🔹 اضافه شد
-
+app.use("/api/saved-ads", savedAdsRoutes);
 
 
 
