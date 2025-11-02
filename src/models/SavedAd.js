@@ -14,7 +14,7 @@ const savedAdSchema = new mongoose.Schema({
   adType: {
     type: String,
     required: true,
-    enum: ["job", "proprety"]  // 👈 اسم دقیق مدل‌هایی که ساختی
+    enum: ["job", "property"]  // 👈 اسم دقیق مدل‌هایی که ساختی
   },
   createdAt: {
     type: Date,
