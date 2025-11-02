@@ -56,7 +56,7 @@ city: {
   { timestamps: true }
 );
 
-const Property = mongoose.model("Property", propertySchema);
+const Property = mongoose.model("property", propertySchema);
 
 export default Property;
 
