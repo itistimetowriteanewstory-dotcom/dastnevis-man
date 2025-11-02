@@ -49,7 +49,12 @@ router.delete("/", protectRoute, async (req, res) => {
 router.get("/", protectRoute, async (req, res) => {
   try {
     const savedAds = await SavedAd.find({ user: req.user._id })
-      .populate("ad"); // 👈 حالا خودش می‌فهمه job یا property رو بیاره
+      .populate({
+    path: "ad",
+    populate: { path: "user", select: "username profileImage" } // 👈 اینجا
+  });
+
+ // 👈 حالا خودش می‌فهمه job یا property رو بیاره
 
     res.json(savedAds);
   } catch (error) {
