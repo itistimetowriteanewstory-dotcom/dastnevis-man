@@ -11,8 +11,8 @@ const router = express.Router();
 
 router.post("/", protectRoute, async (req, res) => {
     try {
-        const {title, caption, image, phoneNumber, jobtitle, income, location} = req.body;
-   if(!image || !title || !caption || !phoneNumber || !income || !location) {
+        const {title, caption, image, phoneNumber, jobtitle, income, location, workingHours, paymentType} = req.body;
+   if(!image || !title || !caption || !phoneNumber || !income || !location|| !workingHours || !paymentType) {
     return res.status(400).json({message: "همه خانه هارا پر کنید"});
     }
 
@@ -52,6 +52,8 @@ router.post("/", protectRoute, async (req, res) => {
     jobtitle,
     income,
     location,
+     workingHours,
+     paymentType,
     user: req.user._id,
   })
 

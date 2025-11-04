@@ -16,7 +16,16 @@ const jobSchema = new mongoose.Schema(
 
         },
        
-        
+      workingHours: {
+         type: String,
+         required: false },
+
+     paymentType: { 
+      type: String, 
+      required: false 
+    },
+
+
     phoneNumber: {
       type: String,
       required: false,
