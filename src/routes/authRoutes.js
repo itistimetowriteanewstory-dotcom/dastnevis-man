@@ -5,9 +5,13 @@ import protectRoute from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-const generateToken = (userId) =>{
-   return jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: "15d"});
-}
+const generateAccessToken = (userId) =>{
+   return jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: "15m"});
+};
+const generateRefreshToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+};
+
 
 router.post("/register", async (req, res) => {
     try {
@@ -53,9 +57,11 @@ const profileImage = `https://api.dicebear.com/9.x/initials/svg?seed=${username}
 
        await user.save();
 
-       const token = generateToken(user._id);
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
        res.status(201).json({
-        token,
+          accessToken,
+          refreshToken,
         user: {
             _id: user._id,
             username: user.username,
@@ -85,9 +91,12 @@ router.post("/login", async (req, res) => {
     if(!isPasswordCorrect) return res.status(400).json({message: "رمز عبور اشتباه است"});
 
     //genarte token 
-    const token = generateToken(user._id);
+     const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
     res.status(200).json({
-        token,
+         accessToken,
+         refreshToken,
         user: {
             id: user._id,
             username: user.username,
@@ -125,7 +134,21 @@ router.post("/save-token", protectRoute, async (req, res) => {
 });
 
 
+router.post("/refresh", async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(401).json({ message: "رفرش توکن ارسال نشده" });
 
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(401).json({ message: "کاربر یافت نشد" });
+
+    const newAccessToken = generateAccessToken(user._id);
+    res.json({ accessToken: newAccessToken });
+  } catch (err) {
+    return res.status(401).json({ message: "رفرش توکن نامعتبر یا منقضی شده" });
+  }
+});
 
 
 export default router;
