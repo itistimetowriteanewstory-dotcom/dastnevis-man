@@ -1,7 +1,9 @@
-import express, { json } from "express";
+import express from "express";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import protectRoute from "../middleware/auth.middleware.js";
+import rateLimit from "express-rate-limit";
+
 
 const router = express.Router();
 
@@ -12,8 +14,25 @@ const generateRefreshToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
 };
 
+// 🔹 اینجا تعریف کن
+const loginLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // ۲۴ ساعت
+  max: 5,
+  message: "تعداد تلاش‌های ورود بیش از حد مجاز است. لطفاً فردا دوباره امتحان کنید.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-router.post("/register", async (req, res) => {
+const registerLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 5,
+  message: "تعداد تلاش‌های ثبت‌نام بیش از حد مجاز است. لطفاً فردا دوباره امتحان کنید.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+
+router.post("/register", registerLimiter, async (req, res) => {
     try {
         const {email, username, password} = req.body;
         if(!username || !email || !password) {
@@ -77,7 +96,7 @@ const profileImage = `https://api.dicebear.com/9.x/initials/svg?seed=${username}
     }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter, async (req, res) => {
   try {
     const {email, password} = req.body;
     if(!email || !password) return res.status(400).json({message:"همه خانه هارا پر کنید"});
