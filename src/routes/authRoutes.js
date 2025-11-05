@@ -17,7 +17,7 @@ const generateRefreshToken = (userId) => {
 // 🔹 اینجا تعریف کن
 const loginLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // ۲۴ ساعت
-  max: 5,
+  max:  30,
   message: "تعداد تلاش‌های ورود بیش از حد مجاز است. لطفاً فردا دوباره امتحان کنید.",
   standardHeaders: true,
   legacyHeaders: false,
@@ -25,7 +25,7 @@ const loginLimiter = rateLimit({
 
 const registerLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
-  max: 5,
+  max:  30,
   message: "تعداد تلاش‌های ثبت‌نام بیش از حد مجاز است. لطفاً فردا دوباره امتحان کنید.",
   standardHeaders: true,
   legacyHeaders: false,
