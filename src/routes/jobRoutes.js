@@ -90,14 +90,10 @@ for (const user of users) {
   await user.save();
 }
 
-if (messages.length > 0) {
-  try {
-    const ticketChunk = await expo.sendPushNotificationsAsync(messages);
 
-  } catch (error) {
-    console.error("Error sending notifications:", error);
-  }
-}
+
+
+
 
 
   res.status(201).json(newJob)

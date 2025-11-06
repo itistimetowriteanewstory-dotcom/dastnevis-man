@@ -18,12 +18,11 @@ const protectRoute = async(req, res, next)=>{
        let decoded;
        try {
         decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
-         console.log("Decoded:", decoded);
-          console.log("⏰ Exp (UTC):", new Date(decoded.exp * 1000));
+
        } catch (err) {
          console.error("JWT Error:", err);
         if (err.name === "TokenExpiredError") {
-            console.error("⏳ Token expired at:", err.expiredAt);
+          
           return res.status(401).json({ message: "توکن منقضی شده" });
          }
         return res.status(401).json({ message: "توکن نامعتبر است" });
