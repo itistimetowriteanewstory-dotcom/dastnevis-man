@@ -6,9 +6,10 @@ import { connectDB } from "./lib/db.js";
 import jobRoutes from "./routes/jobRoutes.js";
 import property from "./routes/property.js";
 import savedAdsRoutes from "./routes/savedAds.js";
-
-
-
+import carRoutes from "./routes/carRoutes.js";
+import kitchenRoutes from "./routes/kitchenRoutes.js";
+import cloutesRoutes from "./routes/cloutesRoutes.js";
+import eatRoutes from "./routes/eatRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,7 +31,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/properties", property); // 🔹 اضافه شد
 app.use("/api/saved-ads", savedAdsRoutes);
-
+app.use("/api/car", carRoutes);
+app.use("/api/kitchen", kitchenRoutes);
+app.use("/api/cloutes", cloutesRoutes);
+app.use("/api/eat", eatRoutes);
 
 
 
