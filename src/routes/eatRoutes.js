@@ -65,13 +65,28 @@ router.get("/", protectRoute, async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const eats = await Eat.find()
+    // گرفتن پارامترهای جستجو از کوئری
+    const { title, location } = req.query;
+
+    // ساخت فیلتر داینامیک
+    const filter = {};
+
+    if (title) {
+      filter.title = { $regex: title, $options: "i" };
+    }
+
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
+    }
+
+    // اجرای کوئری با فیلتر
+    const eats = await Eat.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("user", "username profileImage");
 
-    const total = await Eat.countDocuments();
+    const total = await Eat.countDocuments(filter);
 
     res.send({
       eats,
@@ -84,6 +99,7 @@ router.get("/", protectRoute, async (req, res) => {
     res.status(500).json({ message: "خطای سرور" });
   }
 });
+
 
 // 📌 حذف آگهی غذا
 router.delete("/:id", protectRoute, async (req, res) => {

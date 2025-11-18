@@ -107,13 +107,43 @@ router.get("/", protectRoute, async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const homes = await HomeAndKitchen.find()
+    // گرفتن پارامترهای جستجو از کوئری
+    const { category, title1, title2, location1, location2, location3 } = req.query;
+
+    // ساخت فیلتر داینامیک
+    const filter = {};
+
+    if (category) {
+      filter.category = { $regex: category, $options: "i" };
+    }
+
+    if (title1 || title2) {
+      filter.title = {
+        $in: [
+          ...(title1 ? [new RegExp(title1, "i")] : []),
+          ...(title2 ? [new RegExp(title2, "i")] : []),
+        ],
+      };
+    }
+
+    if (location1 || location2 || location3) {
+      filter.location = {
+        $in: [
+          ...(location1 ? [new RegExp(location1, "i")] : []),
+          ...(location2 ? [new RegExp(location2, "i")] : []),
+          ...(location3 ? [new RegExp(location3, "i")] : []),
+        ],
+      };
+    }
+
+    // اجرای کوئری با فیلتر
+    const homes = await HomeAndKitchen.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("user", "username profileImage");
 
-    const total = await HomeAndKitchen.countDocuments();
+    const total = await HomeAndKitchen.countDocuments(filter);
 
     res.send({
       homes,
@@ -126,6 +156,8 @@ router.get("/", protectRoute, async (req, res) => {
     res.status(500).json({ message: "خطای سرور" });
   }
 });
+
+
 
 // 📌 حذف آگهی خانه/آشپزخانه
 router.delete("/:id", protectRoute, async (req, res) => {

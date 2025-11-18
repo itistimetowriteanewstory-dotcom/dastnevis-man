@@ -34,6 +34,12 @@ const carSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+      adType: {
+      type: String,
+      required: true,
+    },
+
+
     carcard: {
       type: String, 
       required: false,

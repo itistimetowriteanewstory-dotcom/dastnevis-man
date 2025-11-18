@@ -10,9 +10,9 @@ const router = express.Router();
 // 📌 ایجاد آگهی خودرو جدید
 router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, caption, image, model, brand, fuelType, phoneNumber, carcard, price, location } = req.body;
+    const { title, caption, image, model, brand, fuelType, phoneNumber, carcard, price, location, adType } = req.body;
 
-    if (!title || !caption || !image || !phoneNumber || !location) {
+    if (!title || !caption || !image || !phoneNumber || !location || !adType) {
       return res.status(400).json({ message: "عنوان، کپشن و تصویر الزامی هستند" });
     }
 
@@ -53,6 +53,7 @@ router.post("/", protectRoute, async (req, res) => {
       carcard,
       price,
       location,
+      adType,
       user: req.user._id,
     });
 
@@ -106,13 +107,33 @@ router.get("/", protectRoute, async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const cars = await Car.find()
+    // گرفتن پارامترهای جستجو از کوئری
+    const { location, model, adType } = req.query;
+
+    // ساخت فیلتر
+    const filter = {};
+
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
+    }
+
+    if (model) {
+      filter.model = { $regex: model, $options: "i" };
+    }
+
+     if (adType) {
+      filter.adType = { $regex: adType, $options: "i" }; 
+      // چون دیگه enum نیست، می‌تونی regex بذاری تا جستجو انعطاف‌پذیر باشه
+    }
+
+    // اجرای کوئری با فیلتر
+    const cars = await Car.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("user", "username profileImage");
 
-    const total = await Car.countDocuments();
+    const total = await Car.countDocuments(filter);
 
     res.send({
       cars,
@@ -125,6 +146,8 @@ router.get("/", protectRoute, async (req, res) => {
     res.status(500).json({ message: "خطای سرور" });
   }
 });
+
+
 
 // 📌 حذف آگهی خودرو
 router.delete("/:id", protectRoute, async (req, res) => {

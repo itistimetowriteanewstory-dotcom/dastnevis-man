@@ -106,17 +106,33 @@ router.post("/", protectRoute, async (req, res) => {
 // 📌 گرفتن همه آگهی‌های ملک
 router.get("/", protectRoute, async (req, res) => {
   try {
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 5;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const properties = await Property.find()
+    // گرفتن پارامترهای جستجو از کوئری
+    const { type, location } = req.query;
+
+    // ساخت فیلتر داینامیک
+    const filter = {};
+
+    if (type) {
+      filter.type = { $regex: type, $options: "i" }; 
+      // یا اگر می‌خوای دقیق باشه: filter.type = type;
+    }
+
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
+    }
+
+    // اجرای کوئری با فیلتر
+    const properties = await Property.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("user", "username profileImage");
 
-    const total = await Property.countDocuments();
+    const total = await Property.countDocuments(filter);
 
     res.send({
       properties,
@@ -129,6 +145,7 @@ router.get("/", protectRoute, async (req, res) => {
     res.status(500).json({ message: "خطای سرور" });
   }
 });
+
 
 // 📌 حذف آگهی ملک
 router.delete("/:id", protectRoute, async (req, res) => {

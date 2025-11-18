@@ -105,13 +105,32 @@ router.get("/", protectRoute, async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const cloutes = await Cloutes.find()
+    // گرفتن پارامترهای جستجو از کوئری
+    const { title, model, location } = req.query;
+
+    // ساخت فیلتر داینامیک
+    const filter = {};
+
+    if (title) {
+      filter.title = { $regex: title, $options: "i" };
+    }
+
+    if (model) {
+      filter.model = { $regex: model, $options: "i" };
+    }
+
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
+    }
+
+    // اجرای کوئری با فیلتر
+    const cloutes = await Cloutes.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate("user", "username profileImage");
 
-    const total = await Cloutes.countDocuments();
+    const total = await Cloutes.countDocuments(filter);
 
     res.send({
       cloutes,
@@ -124,6 +143,8 @@ router.get("/", protectRoute, async (req, res) => {
     res.status(500).json({ message: "خطای سرور" });
   }
 });
+
+
 
 // 📌 حذف آگهی Cloutes
 router.delete("/:id", protectRoute, async (req, res) => {
