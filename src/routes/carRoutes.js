@@ -100,7 +100,7 @@ router.post("/", protectRoute, async (req, res) => {
   }
 });
 
-// 📌 گرفتن همه آگهی‌های خودرو
+
 router.get("/", protectRoute, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -108,7 +108,7 @@ router.get("/", protectRoute, async (req, res) => {
     const skip = (page - 1) * limit;
 
     // گرفتن پارامترهای جستجو از کوئری
-    const { location, model, adType } = req.query;
+    const { location, model, adType, title } = req.query;
 
     // ساخت فیلتر
     const filter = {};
@@ -121,9 +121,12 @@ router.get("/", protectRoute, async (req, res) => {
       filter.model = { $regex: model, $options: "i" };
     }
 
-     if (adType) {
-      filter.adType = { $regex: adType, $options: "i" }; 
-      // چون دیگه enum نیست، می‌تونی regex بذاری تا جستجو انعطاف‌پذیر باشه
+    if (adType) {
+      filter.adType = { $regex: adType, $options: "i" };
+    }
+
+    if (title) {
+      filter.title = { $regex: title, $options: "i" };
     }
 
     // اجرای کوئری با فیلتر
