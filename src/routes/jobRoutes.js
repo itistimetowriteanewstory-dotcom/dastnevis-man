@@ -105,29 +105,43 @@ for (const user of users) {
 });
 
 // get all jobs
-router.get("/", protectRoute, async (req, res)=>{
-    try {
+router.get("/", protectRoute, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
 
-     const page = req.query.page || 1;
-     const limit = req.query.limit || 5;
-     const skip = (page - 1) * limit;
+    const { searchQuery = "", locationFilter = "" } = req.query;
 
-        const jobs = await Job.find().sort({ createdAt: -1})
-        .skip(skip)
-        .limit(limit)
-        .populate("user", "username profileImage");
+    // ساخت query برای MongoDB
+    const query = {};
 
-        const total = await Job.countDocuments();
-        res.send({
-            jobs,
-            currentPage: page,
-            totalJobs: total,
-            totalPages: Math.ceil(total / limit),
-        });
-    } catch (error) {
-        console.log("error in get all jobs route");
-        res.status(500).json({message: "خطای سرور"});
+    if (searchQuery) {
+      query.title = { $regex: searchQuery, $options: "i" }; // جستجو در عنوان
     }
+
+    if (locationFilter) {
+      query.location = { $regex: locationFilter, $options: "i" }; // جستجو در لوکیشن
+    }
+
+    const jobs = await Job.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("user", "username profileImage");
+
+    const total = await Job.countDocuments(query);
+
+    res.send({
+      jobs,
+      currentPage: page,
+      totalJobs: total,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.log("error in get all jobs route", error);
+    res.status(500).json({ message: "خطای سرور" });
+  }
 });
 
 router.delete("/:id", protectRoute, async (req, res) =>{
