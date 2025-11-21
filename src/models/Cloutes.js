@@ -16,16 +16,16 @@ const colutesSchema = new mongoose.Schema(
 
         },
 
-      model: {
+      cloutesModel: {
          type: String,
          required: false },
 
-     status: { 
+     cloutesStatus: { 
       type: String, 
       required: false 
     },
 
-     texture: { 
+     cloutesTexture: { 
       type: String, 
       required: false 
     },
