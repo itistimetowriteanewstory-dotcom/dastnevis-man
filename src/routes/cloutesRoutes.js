@@ -106,7 +106,7 @@ router.get("/", protectRoute, async (req, res) => {
     const skip = (page - 1) * limit;
 
     // گرفتن پارامترهای جستجو از کوئری
-    const { title, model, location } = req.query;
+    const { title, cloutesModel, location, cloutesStatus, cloutesTexture } = req.query;
 
     // ساخت فیلتر داینامیک
     const filter = {};
@@ -115,12 +115,20 @@ router.get("/", protectRoute, async (req, res) => {
       filter.title = { $regex: title, $options: "i" };
     }
 
-    if (model) {
-      filter.model = { $regex: model, $options: "i" };
+    if (cloutesModel) {
+      filter.cloutesModel = { $regex: cloutesModel, $options: "i" };
     }
 
     if (location) {
       filter.location = { $regex: location, $options: "i" };
+    }
+
+     if (cloutesTexture) {
+      filter.cloutesTexture = { $regex: cloutesTexture, $options: "i" };
+    }
+
+     if (cloutesStatus) {
+      filter.cloutesStatus = { $regex: cloutesStatus, $options: "i" };
     }
 
     // اجرای کوئری با فیلتر
