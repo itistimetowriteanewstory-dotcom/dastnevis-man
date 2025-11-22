@@ -18,7 +18,7 @@ const homeSchema = new mongoose.Schema(
 
         category: {
          type: String,
-        enum: ["home", "kitchen"],
+         
         required: true,
         },
       model: {

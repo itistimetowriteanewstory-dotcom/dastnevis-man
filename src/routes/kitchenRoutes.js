@@ -107,8 +107,8 @@ router.get("/", protectRoute, async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    // گرفتن پارامترهای جستجو از کوئری
-    const { category, title1, title2, location1, location2, location3 } = req.query;
+   
+    const { category, title, location, status } = req.query;
 
     // ساخت فیلتر داینامیک
     const filter = {};
@@ -117,24 +117,18 @@ router.get("/", protectRoute, async (req, res) => {
       filter.category = { $regex: category, $options: "i" };
     }
 
-    if (title1 || title2) {
-      filter.title = {
-        $in: [
-          ...(title1 ? [new RegExp(title1, "i")] : []),
-          ...(title2 ? [new RegExp(title2, "i")] : []),
-        ],
-      };
+    if (title) {
+      filter.title = { $regex: title, $options: "i" };
     }
 
-    if (location1 || location2 || location3) {
-      filter.location = {
-        $in: [
-          ...(location1 ? [new RegExp(location1, "i")] : []),
-          ...(location2 ? [new RegExp(location2, "i")] : []),
-          ...(location3 ? [new RegExp(location3, "i")] : []),
-        ],
-      };
+    if (location) {
+      filter.location = { $regex: location, $options: "i" };
     }
+
+    if (status) {
+      filter.status = { $regex: status, $options: "i" };
+    }
+
 
     // اجرای کوئری با فیلتر
     const homes = await HomeAndKitchen.find(filter)
