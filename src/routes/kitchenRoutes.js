@@ -108,26 +108,41 @@ router.get("/", protectRoute, async (req, res) => {
     const skip = (page - 1) * limit;
 
    
-    const { category, title, location, status } = req.query;
+   const { category, title, location, status, dimensions, model, texture } = req.query;
 
-    // ساخت فیلتر داینامیک
-    const filter = {};
+// ساخت فیلتر داینامیک
+const filter = {};
 
-    if (category) {
-      filter.category = { $regex: category, $options: "i" };
-    }
+if (category) {
+  filter.category = { $regex: category, $options: "i" };
+}
 
-    if (title) {
-      filter.title = { $regex: title, $options: "i" };
-    }
+if (title) {
+  filter.title = { $regex: title, $options: "i" };
+}
 
-    if (location) {
-      filter.location = { $regex: location, $options: "i" };
-    }
+if (location) {
+  filter.location = { $regex: location, $options: "i" };
+}
 
-    if (status) {
-      filter.status = { $regex: status, $options: "i" };
-    }
+if (status) {
+  filter.status = { $regex: status, $options: "i" };
+}
+
+// فیلتر جدید برای ابعاد
+if (dimensions) {
+  filter.dimensions = { $regex: dimensions, $options: "i" };
+}
+
+// فیلتر جدید برای مدل
+if (model) {
+  filter.model = { $regex: model, $options: "i" };
+}
+
+// فیلتر جدید برای جنس
+if (texture) {
+  filter.texture = { $regex: texture, $options: "i" };
+}
 
 
     // اجرای کوئری با فیلتر

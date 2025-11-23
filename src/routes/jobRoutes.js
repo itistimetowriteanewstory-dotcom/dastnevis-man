@@ -111,18 +111,46 @@ router.get("/", protectRoute, async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const { searchQuery = "", locationFilter = "" } = req.query;
+  const {
+    title = "",
+    location = "",
+    workingHours = "",
+    paymentType = "",
+    minIncome = "",
+    maxIncome = ""
+  } = req.query;
 
-    // ساخت query برای MongoDB
-    const query = {};
+  const query = {};
 
-    if (searchQuery) {
-      query.title = { $regex: searchQuery, $options: "i" }; // جستجو در عنوان
-    }
+  // فیلتر عنوان (متن آزاد)
+  if (title) {
+    query.title = { $regex: title, $options: "i" };
+  }
 
-    if (locationFilter) {
-      query.location = { $regex: locationFilter, $options: "i" }; // جستجو در لوکیشن
-    }
+  // فیلتر لوکیشن (مقادیر مشخص)
+  if (location) {
+    query.location = location;
+  }
+
+  // فیلتر ساعات کاری
+  if (workingHours) {
+    query.workingHours = workingHours;
+  }
+
+  // فیلتر نوع پرداخت
+  if (paymentType) {
+    query.paymentType = paymentType;
+  }
+
+  // فیلتر محدوده حقوق (income)
+  if (minIncome && maxIncome) {
+    query.income = { $gte: Number(minIncome), $lte: Number(maxIncome) };
+  } else if (minIncome) {
+    query.income = { $gte: Number(minIncome) };
+  } else if (maxIncome) {
+    query.income = { $lte: Number(maxIncome) };
+  }
+
 
     const jobs = await Job.find(query)
       .sort({ createdAt: -1 })
