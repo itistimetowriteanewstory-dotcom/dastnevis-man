@@ -110,20 +110,52 @@ router.get("/", protectRoute, async (req, res) => {
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    // گرفتن پارامترهای جستجو از کوئری
-    const { type, location } = req.query;
+    const {
+      title,
+      type,
+      price,
+      rentPrice,
+      mortgagePrice,
+      location,
+      area,
+    } = req.query;
 
-    // ساخت فیلتر داینامیک
+
+
+     // ساخت فیلتر داینامیک
     const filter = {};
 
+    if (title) {
+      filter.title = { $regex: title, $options: "i" };
+    }
+
     if (type) {
-      filter.type = { $regex: type, $options: "i" }; 
-      // یا اگر می‌خوای دقیق باشه: filter.type = type;
+      filter.type = { $regex: type, $options: "i" };
     }
 
     if (location) {
       filter.location = { $regex: location, $options: "i" };
     }
+
+    if (area) {
+      filter.area = { $regex: area, $options: "i" };
+    }
+
+    // فیلترهای عددی (قیمت‌ها)
+    if (price) {
+      filter.price = { $lte: Number(price) }; // مثلا کمتر یا مساوی قیمت
+    }
+
+    if (rentPrice) {
+      filter.rentPrice = { $lte: Number(rentPrice) };
+    }
+
+    if (mortgagePrice) {
+      filter.mortgagePrice = { $lte: Number(mortgagePrice) };
+    }
+
+
+
 
     // اجرای کوئری با فیلتر
     const properties = await Property.find(filter)
