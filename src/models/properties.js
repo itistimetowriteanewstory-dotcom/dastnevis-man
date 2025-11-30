@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+function arrayLimit(val) {
+  return val.length <= 5; 
+}
+
+
 const propertySchema = new mongoose.Schema(
   {
     title: {
@@ -35,9 +40,10 @@ const propertySchema = new mongoose.Schema(
     description: {
       type: String,
     },
-    image: {
-        type: String, // لینک عکس‌ها
-      },
+   images: {
+  type: [String],
+  validate: [arrayLimit, '{PATH} بیش از 5 عکس نمی‌تواند داشته باشد']
+},
 
      phoneNumber: {   // 🔹 شماره تماس اضافه شد
       type: String,

@@ -10,18 +10,25 @@ const router = express.Router();
 // 📌 ایجاد آگهی ملک جدید
 router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, type, price, rentPrice, mortgagePrice,  phoneNumber, location, description, image, area, city } = req.body;
+    const { title, type, price, rentPrice, mortgagePrice,  phoneNumber, location, description, images, area, city } = req.body;
 
     if (!title || !type || !location || !phoneNumber || !city) {
       return res.status(400).json({ message: "عنوان، نوع و موقعیت الزامی هستند" });
     }
 
-    // آپلود تصویر به Cloudinary
-    let imageUrl = null;
-    if (image && typeof image === "string" && image.startsWith("data:image/")) {
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
+    let imageUrls = [];
+if (images && Array.isArray(images)) {
+  if (images.length > 5) {
+    return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+  }
+
+  for (const img of images) {
+    if (typeof img === "string" && img.startsWith("data:image/")) {
+      const uploadResponse = await cloudinary.uploader.upload(img);
+      imageUrls.push(uploadResponse.secure_url);
     }
+  }
+}
 
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
@@ -56,7 +63,7 @@ router.post("/", protectRoute, async (req, res) => {
        phoneNumber,
         area,
         city,
-      image: imageUrl || null,
+       images: imageUrls,
       user: req.user._id,
     });
 
@@ -189,17 +196,16 @@ router.delete("/:id", protectRoute, async (req, res) => {
       return res.status(401).json({ message: "دسترسی غیر مجاز" });
     }
 
-   // delete image from cloudinary
-if (property.image && property.image.includes("cloudinary")) {
-  try {
-    const publicId = property.image.split("/").pop().split(".")[0];
-    await cloudinary.uploader.destroy(publicId);
-  } catch (deleteError) {
-    console.log("error deleting image from cloudinary", deleteError);
+ if (property.images && property.images.length > 0) {
+  for (const img of property.images) {
+    try {
+      const publicId = img.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(publicId);
+    } catch (deleteError) {
+      console.log("error deleting image from cloudinary", deleteError);
+    }
   }
 }
-
-
 
     await property.deleteOne();
     res.json({ message: "ملک با موفقیت حذف شد" });
