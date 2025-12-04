@@ -10,18 +10,25 @@ const router = express.Router();
 // 📌 ایجاد آگهی جدید (Cloutes)
 router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, caption, image, cloutesModel, cloutesStatus, cloutesTexture, phoneNumber, price, location } = req.body;
+    const { title, caption, images, cloutesModel, cloutesStatus, cloutesTexture, phoneNumber, price, location } = req.body;
 
-    if (!title || !caption || !image || !location || !phoneNumber) {
+    if (!title || !caption || !images || !location || !phoneNumber) {
       return res.status(400).json({ message: "عنوان، کپشن، تصویر و موقعیت الزامی هستند" });
     }
 
-    // آپلود تصویر به Cloudinary
-    let imageUrl = null;
-    if (image && typeof image === "string" && image.startsWith("data:image/")) {
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
-    }
+     let imageUrls = [];
+   if (images && Array.isArray(images)) {
+     if (images.length > 5) {
+       return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+     }
+   
+     for (const img of images) {
+       if (typeof img === "string" && img.startsWith("data:image/")) {
+         const uploadResponse = await cloudinary.uploader.upload(img);
+         imageUrls.push(uploadResponse.secure_url);
+       }
+     }
+   }
 
     // محدودیت تعداد آگهی در روز
     const startOfDay = new Date();
@@ -45,7 +52,7 @@ router.post("/", protectRoute, async (req, res) => {
     const newCloute = new Cloutes({
       title,
       caption,
-      image: imageUrl || image,
+      images: imageUrls,
       cloutesModel,
       cloutesStatus,
       cloutesTexture,
@@ -164,15 +171,17 @@ router.delete("/:id", protectRoute, async (req, res) => {
       return res.status(401).json({ message: "دسترسی غیر مجاز" });
     }
 
-    // حذف تصویر از Cloudinary
-    if (cloute.image && cloute.image.includes("cloudinary")) {
-      try {
-        const publicId = cloute.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(publicId);
-      } catch (deleteError) {
-        console.log("error deleting image from cloudinary", deleteError);
-      }
-    }
+   // حذف همه تصاویر از Cloudinary (نسخه اول)
+   if (cloute.images && cloute.images.length > 0) {
+     for (const img of cloute.images) {
+       try {
+         const publicId = img.split("/").pop().split(".")[0];
+         await cloudinary.uploader.destroy(publicId);
+       } catch (deleteError) {
+         console.log("error deleting image from cloudinary", deleteError);
+       }
+     }
+   }
 
     await cloute.deleteOne();
     res.json({ message: "آگهی با موفقیت حذف شد" });

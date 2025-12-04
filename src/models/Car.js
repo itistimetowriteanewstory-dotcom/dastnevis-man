@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 
+function arrayLimit(val) {
+  return val.length <= 5; 
+}
+
 const carSchema = new mongoose.Schema(
     {
         title: {
@@ -10,10 +14,9 @@ const carSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        image: {
-            type: String,
-            required: true,
-
+        images: {
+        type: [String],
+        validate: [arrayLimit]
         },
        
       model: {

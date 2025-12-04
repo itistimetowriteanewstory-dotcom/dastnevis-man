@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 
+function arrayLimit(val) {
+  return val.length <= 5; 
+}
+
 const homeSchema = new mongoose.Schema(
     {
         title: {
@@ -10,11 +14,10 @@ const homeSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        image: {
-            type: String,
-            required: true,
-
-        },
+        images: {
+       type: [String],
+       validate: [arrayLimit]
+       },
 
         category: {
          type: String,

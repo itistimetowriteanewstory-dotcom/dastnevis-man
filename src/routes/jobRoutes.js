@@ -11,15 +11,26 @@ const router = express.Router();
 
 router.post("/", protectRoute, async (req, res) => {
     try {
-        const {title, caption, image, phoneNumber, jobtitle, income, location, workingHours, paymentType} = req.body;
-   if(!image || !title || !caption || !phoneNumber || !income || !location|| !workingHours || !paymentType) {
+        const {title, caption, images, phoneNumber, jobtitle, income, location, workingHours, paymentType} = req.body;
+   if(!images || !title || !caption || !phoneNumber || !income || !location|| !workingHours || !paymentType) {
     return res.status(400).json({message: "همه خانه هارا پر کنید"});
     }
 
-    if (!image || typeof image !== "string" || !image.startsWith("data:image/")) {
-  console.log("فرمت تصویر نامعتبر یا ناقص:", image?.slice(0, 100));
-  return res.status(400).json({ message: "فرمت تصویر نامعتبر است یا تصویر ارسال نشده" });
-}
+   // محدودیت تعداد عکس
+    let imageUrls = [];
+    if (images && Array.isArray(images)) {
+      if (images.length > 5) {
+        return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+      }
+
+      for (const img of images) {
+        if (typeof img === "string" && img.startsWith("data:image/")) {
+          const uploadResponse = await cloudinary.uploader.upload(img);
+          imageUrls.push(uploadResponse.secure_url);
+        }
+      }
+    }
+
 
  // 🔹 محدودیت روزانه ۳ کار
     const startOfDay = new Date();
@@ -39,15 +50,13 @@ router.post("/", protectRoute, async (req, res) => {
 
 
 
-    //upload thr image to cloudinary
-   const uploadResponce = await cloudinary.uploader.upload(image);
-   const imageUrl = uploadResponce.secure_url
+
 
    //save to the data base
   const newJob = new Job({
     title,
     caption,
-    image: imageUrl,
+    images: imageUrls,
     phoneNumber,
     jobtitle,
     income,
@@ -181,15 +190,18 @@ router.delete("/:id", protectRoute, async (req, res) =>{
         if(job.user.toString() !== req.user._id.toString())
             return res.status(401).json({message: "دسترسی غیر مجاز"});
 
-        // delete image from cloudinary
-        if(job.image && job.image.includes("cloudinary")){
-            try {
-                const publicId = job.image.split("/").pop().split(".")[0];
-                await cloudinary.uploader.destroy(publicId);
-            } catch (deleteError) {
-                console.log("error deleting image from cloudinary", deleteError);
-            }
+       // حذف همه تصاویر از Cloudinary
+    if (job.images && job.images.length > 0) {
+      for (const img of job.images) {
+        try {
+          const publicId = img.split("/").pop().split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        } catch (deleteError) {
+          console.log("error deleting image from cloudinary", deleteError);
         }
+      }
+    }
+
 
         await job.deleteOne();
        res.json({message: "شغل با موفقیت حذف شد"});

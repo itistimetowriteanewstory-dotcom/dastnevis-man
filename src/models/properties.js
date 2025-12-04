@@ -42,7 +42,7 @@ const propertySchema = new mongoose.Schema(
     },
    images: {
   type: [String],
-  validate: [arrayLimit, '{PATH} بیش از 5 عکس نمی‌تواند داشته باشد']
+  validate: [arrayLimit]
 },
 
      phoneNumber: {   // 🔹 شماره تماس اضافه شد

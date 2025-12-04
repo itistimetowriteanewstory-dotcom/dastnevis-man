@@ -10,18 +10,26 @@ const router = express.Router();
 // 📌 ایجاد آگهی خودرو جدید
 router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, caption, image, model, brand, fuelType, phoneNumber, carcard, price, location, adType } = req.body;
+    const { title, caption, images, model, brand, fuelType, phoneNumber, carcard, price, location, adType } = req.body;
 
-    if (!title || !caption || !image || !phoneNumber || !location || !adType) {
+    if (!title || !caption || !images || !phoneNumber || !location || !adType) {
       return res.status(400).json({ message: "عنوان، کپشن و تصویر الزامی هستند" });
     }
 
-    // آپلود تصویر به Cloudinary
-    let imageUrl = null;
-    if (image && typeof image === "string" && image.startsWith("data:image/")) {
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
+
+     let imageUrls = [];
+if (images && Array.isArray(images)) {
+  if (images.length > 5) {
+    return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+  }
+
+  for (const img of images) {
+    if (typeof img === "string" && img.startsWith("data:image/")) {
+      const uploadResponse = await cloudinary.uploader.upload(img);
+      imageUrls.push(uploadResponse.secure_url);
     }
+  }
+}
 
     // محدودیت تعداد آگهی در روز
     const startOfDay = new Date();
@@ -45,7 +53,7 @@ router.post("/", protectRoute, async (req, res) => {
     const newCar = new Car({
       title,
       caption,
-      image: imageUrl || image,
+      images: imageUrls,
       model,
       brand,
       fuelType,
@@ -162,15 +170,17 @@ router.delete("/:id", protectRoute, async (req, res) => {
       return res.status(401).json({ message: "دسترسی غیر مجاز" });
     }
 
-    // حذف تصویر از Cloudinary
-    if (car.image && car.image.includes("cloudinary")) {
-      try {
-        const publicId = car.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(publicId);
-      } catch (deleteError) {
-        console.log("error deleting image from cloudinary", deleteError);
-      }
+   // حذف همه تصاویر از Cloudinary (نسخه اول)
+if (car.images && car.images.length > 0) {
+  for (const img of car.images) {
+    try {
+      const publicId = img.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(publicId);
+    } catch (deleteError) {
+      console.log("error deleting image from cloudinary", deleteError);
     }
+  }
+}
 
     await car.deleteOne();
     res.json({ message: "خودرو با موفقیت حذف شد" });
