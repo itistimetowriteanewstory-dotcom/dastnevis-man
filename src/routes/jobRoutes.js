@@ -125,8 +125,7 @@ router.get("/", protectRoute, async (req, res) => {
     location = "",
     workingHours = "",
     paymentType = "",
-    minIncome = "",
-    maxIncome = ""
+  
   } = req.query;
 
   const query = {};
@@ -151,14 +150,10 @@ router.get("/", protectRoute, async (req, res) => {
     query.paymentType = paymentType;
   }
 
-  // فیلتر محدوده حقوق (income)
-  if (minIncome && maxIncome) {
-    query.income = { $gte: Number(minIncome), $lte: Number(maxIncome) };
-  } else if (minIncome) {
-    query.income = { $gte: Number(minIncome) };
-  } else if (maxIncome) {
-    query.income = { $lte: Number(maxIncome) };
-  }
+ 
+if (income) {
+  query.income = { $regex: income, $options: "i" };
+}
 
 
     const jobs = await Job.find(query)

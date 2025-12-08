@@ -136,9 +136,10 @@ router.get("/", protectRoute, async (req, res) => {
       filter.title = { $regex: title, $options: "i" };
     }
 
-    if (type) {
-      filter.type = { $regex: type, $options: "i" };
-    }
+  if (type) {
+  filter.type = type; 
+  }
+
 
     if (location) {
       filter.location = { $regex: location, $options: "i" };
