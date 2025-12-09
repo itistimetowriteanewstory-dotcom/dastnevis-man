@@ -117,26 +117,27 @@ router.get("/", protectRoute, async (req, res) => {
 
     // ساخت فیلتر داینامیک
     const filter = {};
+    const ignoreValue = "بدون فیلتر"; 
 
-    if (title) {
-      filter.title = { $regex: title, $options: "i" };
-    }
+if (title && title !== ignoreValue) {
+  filter.title = { $regex: title, $options: "i" };
+}
 
-    if (cloutesModel) {
-      filter.cloutesModel = { $regex: cloutesModel, $options: "i" };
-    }
+if (cloutesModel && cloutesModel !== ignoreValue) {
+  filter.cloutesModel = { $regex: cloutesModel, $options: "i" };
+}
 
-    if (location) {
-      filter.location = { $regex: location, $options: "i" };
-    }
+if (location && location !== ignoreValue) {
+  filter.location = { $regex: location, $options: "i" };
+}
 
-     if (cloutesTexture) {
-      filter.cloutesTexture = { $regex: cloutesTexture, $options: "i" };
-    }
+if (cloutesTexture && cloutesTexture !== ignoreValue) {
+  filter.cloutesTexture = { $regex: cloutesTexture, $options: "i" };
+}
 
-     if (cloutesStatus) {
-      filter.cloutesStatus = { $regex: cloutesStatus, $options: "i" };
-    }
+if (cloutesStatus && cloutesStatus !== ignoreValue) {
+  filter.cloutesStatus = { $regex: cloutesStatus, $options: "i" };
+}
 
     // اجرای کوئری با فیلتر
     const cloutes = await Cloutes.find(filter)

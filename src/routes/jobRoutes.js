@@ -129,28 +129,28 @@ router.get("/", protectRoute, async (req, res) => {
   } = req.query;
 
   const query = {};
-
+  const ignoreValue = "بدون فیلتر";
   
-if (title && title !== "همه" && title !== "بدون فیلتر") {
+if (title && title !== ignoreValue) {
   query.title = { $regex: title, $options: "i" };
 }
 
-if (location && location !== "همه" && location !== "بدون فیلتر") {
+if (location && location !== ignoreValue) {
   query.location = location;
 }
 
 
-if (workingHours && workingHours !== "همه" && workingHours !== "بدون فیلتر") {
+if (workingHours && workingHours !== ignoreValue) {
   query.workingHours = workingHours;
 }
 
 
-if (paymentType && paymentType !== "همه" && paymentType !== "بدون فیلتر") {
+if (paymentType && paymentType !== ignoreValue) {
   query.paymentType = paymentType;
 }
 
 
-if (income && income !== "همه" && income !== "بدون فیلتر") {
+if (income && income !== ignoreValue) {
   query.income = { $regex: income, $options: "i" };
 }
 

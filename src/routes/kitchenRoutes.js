@@ -121,34 +121,36 @@ router.get("/", protectRoute, async (req, res) => {
 // ساخت فیلتر داینامیک
 const filter = {};
 
-if (category) {
+const ignoreValue = "بدون فیلتر"; 
+
+if (category && category !== ignoreValue) {
   filter.category = { $regex: category, $options: "i" };
 }
 
-if (title) {
+if (title && title !== ignoreValue) {
   filter.title = { $regex: title, $options: "i" };
 }
 
-if (location) {
+if (location && location !== ignoreValue) {
   filter.location = { $regex: location, $options: "i" };
 }
 
-if (status) {
+if (status && status !== ignoreValue) {
   filter.status = { $regex: status, $options: "i" };
 }
 
 // فیلتر جدید برای ابعاد
-if (dimensions) {
+if (dimensions && dimensions !== ignoreValue) {
   filter.dimensions = { $regex: dimensions, $options: "i" };
 }
 
 // فیلتر جدید برای مدل
-if (model) {
+if (model && model !== ignoreValue) {
   filter.model = { $regex: model, $options: "i" };
 }
 
 // فیلتر جدید برای جنس
-if (texture) {
+if (texture && texture !== ignoreValue) {
   filter.texture = { $regex: texture, $options: "i" };
 }
 

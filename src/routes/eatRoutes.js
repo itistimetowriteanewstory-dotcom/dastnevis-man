@@ -77,12 +77,13 @@ router.get("/", protectRoute, async (req, res) => {
 
     // ساخت فیلتر داینامیک
     const filter = {};
-
-    if (title) {
+    const ignoreValue = "بدون فیلتر"; 
+    
+    if (title && title ==! ignoreValue) {
       filter.title = { $regex: title, $options: "i" };
     }
 
-    if (location) {
+    if (location && location ==! ignoreValue) {
       filter.location = { $regex: location, $options: "i" };
     }
 

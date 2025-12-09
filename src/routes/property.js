@@ -131,36 +131,36 @@ router.get("/", protectRoute, async (req, res) => {
 
      // ساخت فیلتر داینامیک
     const filter = {};
+    const ignoreValue = "بدون فیلتر";
 
-    if (title) {
-      filter.title = { $regex: title, $options: "i" };
-    }
+if (title && title !== ignoreValue) {
+  filter.title = { $regex: title, $options: "i" };
+}
 
-  if (type) {
-  filter.type = type; 
-  }
+if (type && type !== ignoreValue) {
+  filter.type = type;
+}
+
+if (location && location !== ignoreValue) {
+  filter.location = { $regex: location, $options: "i" };
+}
+
+if (area && area !== ignoreValue) {
+  filter.area = { $regex: area, $options: "i" };
+}
 
 
-    if (location) {
-      filter.location = { $regex: location, $options: "i" };
-    }
+   if (price && price !== ignoreValue) {
+  filter.price = { $regex: price, $options: "i" };
+}
 
-    if (area) {
-      filter.area = { $regex: area, $options: "i" };
-    }
+if (rentPrice && rentPrice !== ignoreValue) {
+  filter.rentPrice = { $regex: rentPrice, $options: "i" };
+}
 
-    // فیلترهای عددی (قیمت‌ها)
-    if (price) {
-      filter.price = { $lte: Number(price) }; // مثلا کمتر یا مساوی قیمت
-    }
-
-    if (rentPrice) {
-      filter.rentPrice = { $lte: Number(rentPrice) };
-    }
-
-    if (mortgagePrice) {
-      filter.mortgagePrice = { $lte: Number(mortgagePrice) };
-    }
+if (mortgagePrice && mortgagePrice !== ignoreValue) {
+  filter.mortgagePrice = { $regex: mortgagePrice, $options: "i" };
+}
 
 
 

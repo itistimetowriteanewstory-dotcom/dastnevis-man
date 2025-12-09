@@ -118,24 +118,25 @@ router.get("/", protectRoute, async (req, res) => {
     // گرفتن پارامترهای جستجو از کوئری
     const { location, model, adType, title } = req.query;
 
-    // ساخت فیلتر
-    const filter = {};
+   const filter = {};
+const ignoreValue = "بدون فیلتر"; // مقدار پیش‌فرض برای نادیده گرفتن
 
-    if (location) {
-      filter.location = { $regex: location, $options: "i" };
-    }
+if (location && location !== ignoreValue) {
+  filter.location = { $regex: location, $options: "i" };
+}
 
-    if (model) {
-      filter.model = { $regex: model, $options: "i" };
-    }
+if (model && model !== ignoreValue) {
+  filter.model = { $regex: model, $options: "i" };
+}
 
-    if (adType) {
-      filter.adType = { $regex: adType, $options: "i" };
-    }
+if (adType && adType !== ignoreValue) {
+  filter.adType = { $regex: adType, $options: "i" };
+}
 
-    if (title) {
-      filter.title = { $regex: title, $options: "i" };
-    }
+if (title && title !== ignoreValue) {
+  filter.title = { $regex: title, $options: "i" };
+}
+
 
     // اجرای کوئری با فیلتر
     const cars = await Car.find(filter)
