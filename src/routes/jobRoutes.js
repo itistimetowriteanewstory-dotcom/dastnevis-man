@@ -125,7 +125,7 @@ router.get("/", protectRoute, async (req, res) => {
     location = "",
     workingHours = "",
     paymentType = "",
-  
+    income = ""
   } = req.query;
 
   const query = {};
