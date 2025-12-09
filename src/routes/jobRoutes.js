@@ -130,28 +130,27 @@ router.get("/", protectRoute, async (req, res) => {
 
   const query = {};
 
-  // فیلتر عنوان (متن آزاد)
-  if (title) {
-    query.title = { $regex: title, $options: "i" };
-  }
+  
+if (title && title !== "همه" && title !== "بدون فیلتر") {
+  query.title = { $regex: title, $options: "i" };
+}
 
-  // فیلتر لوکیشن (مقادیر مشخص)
-  if (location) {
-    query.location = location;
-  }
+if (location && location !== "همه" && location !== "بدون فیلتر") {
+  query.location = location;
+}
 
-  // فیلتر ساعات کاری
-  if (workingHours) {
-    query.workingHours = workingHours;
-  }
 
-  // فیلتر نوع پرداخت
-  if (paymentType) {
-    query.paymentType = paymentType;
-  }
+if (workingHours && workingHours !== "همه" && workingHours !== "بدون فیلتر") {
+  query.workingHours = workingHours;
+}
 
- 
-if (income) {
+
+if (paymentType && paymentType !== "همه" && paymentType !== "بدون فیلتر") {
+  query.paymentType = paymentType;
+}
+
+
+if (income && income !== "همه" && income !== "بدون فیلتر") {
   query.income = { $regex: income, $options: "i" };
 }
 
