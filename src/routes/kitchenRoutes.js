@@ -10,9 +10,9 @@ const router = express.Router();
 // 📌 ایجاد آگهی خانه/آشپزخانه جدید
 router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, caption, images, model, status, texture, phoneNumber, dimensions, price, location, category} = req.body;
+    const { title, caption, images, model, status, address, texture, phoneNumber, dimensions, price, location, category} = req.body;
 
-    if (!title || !caption || !images || !location || !phoneNumber) {
+    if (!title || !caption || !images || !location || !phoneNumber || !address) {
       return res.status(400).json({ message: "عنوان، کپشن، تصویر و موقعیت الزامی هستند" });
     }
 
@@ -62,6 +62,7 @@ router.post("/", protectRoute, async (req, res) => {
       price,
       location,
       category,
+      address,
       user: req.user._id,
     });
 

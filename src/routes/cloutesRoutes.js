@@ -10,10 +10,10 @@ const router = express.Router();
 // 📌 ایجاد آگهی جدید (Cloutes)
 router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, caption, images, cloutesModel, cloutesStatus, cloutesTexture, phoneNumber, price, location } = req.body;
+    const { title, caption, images, cloutesModel, address, cloutesStatus, cloutesTexture, phoneNumber, price, location } = req.body;
 
-    if (!title || !caption || !images || !location || !phoneNumber) {
-      return res.status(400).json({ message: "عنوان، کپشن، تصویر و موقعیت الزامی هستند" });
+    if (!title || !caption || !images || !location || !phoneNumber  || !address) {
+      return res.status(400).json({ message: "عنوان، کپشن، تصویر و موقعیت و آدرس الزامی هستند" });
     }
 
      let imageUrls = [];
@@ -59,6 +59,7 @@ router.post("/", protectRoute, async (req, res) => {
       phoneNumber,
       price,
       location,
+      address,
       user: req.user._id,
     });
 

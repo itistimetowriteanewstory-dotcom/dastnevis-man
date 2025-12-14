@@ -8,9 +8,9 @@ const router = express.Router();
 // 📌 ایجاد آگهی غذا جدید
 router.post("/", protectRoute, async (req, res) => {
   try {
-    const { title, caption, images, phoneNumber, price, location } = req.body;
+    const { title, caption, images, phoneNumber, price, location, address } = req.body;
 
-    if (!title || !caption || !images || !location) {
+    if (!title || !caption || !images || !location || !address) {
       return res.status(400).json({ message: "عنوان، کپشن، تصویر و موقعیت الزامی هستند" });
     }
 
@@ -54,6 +54,7 @@ router.post("/", protectRoute, async (req, res) => {
       phoneNumber,
       price,
       location,
+      address,
       user: req.user._id,
     });
 
