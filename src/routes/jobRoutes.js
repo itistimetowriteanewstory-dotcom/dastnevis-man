@@ -285,5 +285,18 @@ router.put("/:id", protectRoute, async (req, res) => {
   }
 });
 
+// get job by id
+router.get("/:id", protectRoute, async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id).populate("user", "username profileImage");
+    if (!job) return res.status(404).json({ message: "شغل پیدا نشد" });
+
+    res.json(job);
+  } catch (error) {
+    console.error("error fetching job", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
 
 export default router;
