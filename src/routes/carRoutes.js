@@ -202,4 +202,87 @@ router.get("/user", protectRoute, async (req, res) => {
   }
 });
 
+// update car
+router.put("/:id", protectRoute, async (req, res) => {
+  try {
+    const { 
+      title, caption, images, model, brand, fuelType, phoneNumber, carcard, price, location, adType 
+    } = req.body;
+
+    const car = await Car.findById(req.params.id);
+    if (!car) return res.status(404).json({ message: "خودرو پیدا نشد" });
+
+    // فقط صاحب آگهی اجازه ویرایش دارد
+    if (car.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "دسترسی غیر مجاز" });
+    }
+
+    let imageUrls = car.images;
+
+    // اگر تصاویر جدید فرستاده شده باشند
+    if (images && Array.isArray(images)) {
+      if (images.length > 5) {
+        return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+      }
+
+      // 🔹 اول تصاویر قبلی رو از Cloudinary پاک کن
+      if (car.images && car.images.length > 0) {
+        for (const img of car.images) {
+          try {
+            const publicId = img.split("/").pop().split(".")[0]; 
+            await cloudinary.uploader.destroy(publicId);
+          } catch (deleteError) {
+            console.log("error deleting old image from cloudinary", deleteError);
+          }
+        }
+      }
+
+      // 🔹 بعد تصاویر جدید رو آپلود کن
+      imageUrls = [];
+      for (const img of images) {
+        if (typeof img === "string" && img.startsWith("data:image/")) {
+          const uploadResponse = await cloudinary.uploader.upload(img);
+          imageUrls.push(uploadResponse.secure_url);
+        } else if (typeof img === "string" && img.startsWith("http")) {
+          imageUrls.push(img); // اگر لینک قبلی باشه، نگهش داریم
+        }
+      }
+    }
+
+    // بروزرسانی فیلدها
+    car.title = title || car.title;
+    car.caption = caption || car.caption;
+    car.images = imageUrls;
+    car.model = model || car.model;
+    car.brand = brand || car.brand;
+    car.fuelType = fuelType || car.fuelType;
+    car.phoneNumber = phoneNumber || car.phoneNumber;
+    car.carcard = carcard || car.carcard;
+    car.price = price || car.price;
+    car.location = location || car.location;
+    car.adType = adType || car.adType;
+
+    await car.save();
+
+    res.json({ message: "آگهی خودرو با موفقیت بروزرسانی شد", car });
+  } catch (error) {
+    console.error("error updating car", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+// get car by id
+router.get("/:id", protectRoute, async (req, res) => {
+  try {
+    const car = await Car.findById(req.params.id).populate("user", "username profileImage");
+    if (!car) return res.status(404).json({ message: "خودرو پیدا نشد" });
+
+    res.json(car);
+  } catch (error) {
+    console.error("error fetching car", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+
 export default router;

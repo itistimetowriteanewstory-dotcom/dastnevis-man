@@ -151,5 +151,83 @@ router.get("/user", protectRoute, async (req, res) => {
   }
 });
 
+// update eat
+router.put("/:id", protectRoute, async (req, res) => {
+  try {
+    const { title, caption, images, phoneNumber, price, location, address } = req.body;
+
+    const eat = await Eat.findById(req.params.id);
+    if (!eat) return res.status(404).json({ message: "آگهی پیدا نشد" });
+
+    // فقط صاحب آگهی اجازه ویرایش دارد
+    if (eat.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "دسترسی غیر مجاز" });
+    }
+
+    let imageUrls = eat.images;
+
+    // اگر تصاویر جدید فرستاده شده باشند
+    if (images && Array.isArray(images)) {
+      if (images.length > 5) {
+        return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+      }
+
+      // 🔹 اول تصاویر قبلی رو از Cloudinary پاک کن
+      if (eat.images && eat.images.length > 0) {
+        for (const img of eat.images) {
+          try {
+            const publicId = img.split("/").pop().split(".")[0]; 
+            await cloudinary.uploader.destroy(publicId);
+          } catch (deleteError) {
+            console.log("error deleting old image from cloudinary", deleteError);
+          }
+        }
+      }
+
+      // 🔹 بعد تصاویر جدید رو آپلود کن
+      imageUrls = [];
+      for (const img of images) {
+        if (typeof img === "string" && img.startsWith("data:image/")) {
+          const uploadResponse = await cloudinary.uploader.upload(img);
+          imageUrls.push(uploadResponse.secure_url);
+        } else if (typeof img === "string" && img.startsWith("http")) {
+          imageUrls.push(img); // اگر لینک قبلی باشه، نگهش داریم
+        }
+      }
+    }
+
+    // بروزرسانی فیلدها
+    eat.title = title || eat.title;
+    eat.caption = caption || eat.caption;
+    eat.images = imageUrls;
+    eat.phoneNumber = phoneNumber || eat.phoneNumber;
+    eat.price = price || eat.price;
+    eat.location = location || eat.location;
+    eat.address = address || eat.address;
+
+    await eat.save();
+
+    res.json({ message: "آگهی غذا با موفقیت بروزرسانی شد", eat });
+  } catch (error) {
+    console.error("error updating eat", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+// get eat by id
+router.get("/:id", protectRoute, async (req, res) => {
+  try {
+    const eat = await Eat.findById(req.params.id).populate("user", "username profileImage");
+    if (!eat) return res.status(404).json({ message: "آگهی پیدا نشد" });
+
+    res.json(eat);
+  } catch (error) {
+    console.error("error fetching eat", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+
+
 export default router;
 

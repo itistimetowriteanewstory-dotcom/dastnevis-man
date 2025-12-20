@@ -204,5 +204,87 @@ router.get("/user", protectRoute, async (req, res) => {
   }
 });
 
+// update cloute
+router.put("/:id", protectRoute, async (req, res) => {
+  try {
+    const { 
+      title, caption, images, cloutesModel, address, cloutesStatus, cloutesTexture, phoneNumber, price, location 
+    } = req.body;
+
+    const cloute = await Cloutes.findById(req.params.id);
+    if (!cloute) return res.status(404).json({ message: "آگهی پیدا نشد" });
+
+    // فقط صاحب آگهی اجازه ویرایش دارد
+    if (cloute.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "دسترسی غیر مجاز" });
+    }
+
+    let imageUrls = cloute.images;
+
+    // اگر تصاویر جدید فرستاده شده باشند
+    if (images && Array.isArray(images)) {
+      if (images.length > 5) {
+        return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+      }
+
+      // 🔹 اول تصاویر قبلی رو از Cloudinary پاک کن
+      if (cloute.images && cloute.images.length > 0) {
+        for (const img of cloute.images) {
+          try {
+            const publicId = img.split("/").pop().split(".")[0]; 
+            await cloudinary.uploader.destroy(publicId);
+          } catch (deleteError) {
+            console.log("error deleting old image from cloudinary", deleteError);
+          }
+        }
+      }
+
+      // 🔹 بعد تصاویر جدید رو آپلود کن
+      imageUrls = [];
+      for (const img of images) {
+        if (typeof img === "string" && img.startsWith("data:image/")) {
+          const uploadResponse = await cloudinary.uploader.upload(img);
+          imageUrls.push(uploadResponse.secure_url);
+        } else if (typeof img === "string" && img.startsWith("http")) {
+          imageUrls.push(img); // اگر لینک قبلی باشه، نگهش داریم
+        }
+      }
+    }
+
+    // بروزرسانی فیلدها
+    cloute.title = title || cloute.title;
+    cloute.caption = caption || cloute.caption;
+    cloute.images = imageUrls;
+    cloute.cloutesModel = cloutesModel || cloute.cloutesModel;
+    cloute.address = address || cloute.address;
+    cloute.cloutesStatus = cloutesStatus || cloute.cloutesStatus;
+    cloute.cloutesTexture = cloutesTexture || cloute.cloutesTexture;
+    cloute.phoneNumber = phoneNumber || cloute.phoneNumber;
+    cloute.price = price || cloute.price;
+    cloute.location = location || cloute.location;
+
+    await cloute.save();
+
+    res.json({ message: "آگهی پوشاک با موفقیت بروزرسانی شد", cloute });
+  } catch (error) {
+    console.error("error updating cloute", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+// get cloute by id
+router.get("/:id", protectRoute, async (req, res) => {
+  try {
+    const cloute = await Cloutes.findById(req.params.id).populate("user", "username profileImage");
+    if (!cloute) return res.status(404).json({ message: "آگهی پیدا نشد" });
+
+    res.json(cloute);
+  } catch (error) {
+    console.error("error fetching cloute", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+
 export default router;
 

@@ -222,5 +222,90 @@ router.get("/user", protectRoute, async (req, res) => {
   }
 });
 
+// update home/kitchen ad
+router.put("/:id", protectRoute, async (req, res) => {
+  try {
+    const { 
+      title, caption, images, model, status, address, texture, phoneNumber, dimensions, price, location, category 
+    } = req.body;
+
+    const home = await HomeAndKitchen.findById(req.params.id);
+    if (!home) return res.status(404).json({ message: "آگهی پیدا نشد" });
+
+    // فقط صاحب آگهی اجازه ویرایش دارد
+    if (home.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "دسترسی غیر مجاز" });
+    }
+
+    let imageUrls = home.images;
+
+    // اگر تصاویر جدید فرستاده شده باشند
+    if (images && Array.isArray(images)) {
+      if (images.length > 5) {
+        return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+      }
+
+      // 🔹 اول تصاویر قبلی رو از Cloudinary پاک کن
+      if (home.images && home.images.length > 0) {
+        for (const img of home.images) {
+          try {
+            const publicId = img.split("/").pop().split(".")[0]; 
+            await cloudinary.uploader.destroy(publicId);
+          } catch (deleteError) {
+            console.log("error deleting old image from cloudinary", deleteError);
+          }
+        }
+      }
+
+      // 🔹 بعد تصاویر جدید رو آپلود کن
+      imageUrls = [];
+      for (const img of images) {
+        if (typeof img === "string" && img.startsWith("data:image/")) {
+          const uploadResponse = await cloudinary.uploader.upload(img);
+          imageUrls.push(uploadResponse.secure_url);
+        } else if (typeof img === "string" && img.startsWith("http")) {
+          imageUrls.push(img); // اگر لینک قبلی باشه، نگهش داریم
+        }
+      }
+    }
+
+    // بروزرسانی فیلدها
+    home.title = title || home.title;
+    home.caption = caption || home.caption;
+    home.images = imageUrls;
+    home.model = model || home.model;
+    home.status = status || home.status;
+    home.address = address || home.address;
+    home.texture = texture || home.texture;
+    home.phoneNumber = phoneNumber || home.phoneNumber;
+    home.dimensions = dimensions || home.dimensions;
+    home.price = price || home.price;
+    home.location = location || home.location;
+    home.category = category || home.category;
+
+    await home.save();
+
+    res.json({ message: "آگهی خانه/آشپزخانه با موفقیت بروزرسانی شد", home });
+  } catch (error) {
+    console.error("error updating home/kitchen ad", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+// get home/kitchen ad by id
+router.get("/:id", protectRoute, async (req, res) => {
+  try {
+    const home = await HomeAndKitchen.findById(req.params.id).populate("user", "username profileImage");
+    if (!home) return res.status(404).json({ message: "آگهی پیدا نشد" });
+
+    res.json(home);
+  } catch (error) {
+    console.error("error fetching home/kitchen ad", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+
+
 export default router;
 

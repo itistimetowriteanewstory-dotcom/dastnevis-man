@@ -227,5 +227,88 @@ router.get("/user", protectRoute, async (req, res) => {
   }
 });
 
+// update property
+router.put("/:id", protectRoute, async (req, res) => {
+  try {
+    const { 
+      title, type, price, rentPrice, mortgagePrice, phoneNumber, location, description, images, area, city 
+    } = req.body;
+
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ message: "ملک پیدا نشد" });
+
+    // فقط صاحب آگهی اجازه ویرایش دارد
+    if (property.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "دسترسی غیر مجاز" });
+    }
+
+    let imageUrls = property.images;
+
+    // اگر تصاویر جدید فرستاده شده باشند
+    if (images && Array.isArray(images)) {
+      if (images.length > 5) {
+        return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+      }
+
+      // 🔹 اول تصاویر قبلی رو از Cloudinary پاک کن
+      if (property.images && property.images.length > 0) {
+        for (const img of property.images) {
+          try {
+            const publicId = img.split("/").pop().split(".")[0]; 
+            await cloudinary.uploader.destroy(publicId);
+          } catch (deleteError) {
+            console.log("error deleting old image from cloudinary", deleteError);
+          }
+        }
+      }
+
+      // 🔹 بعد تصاویر جدید رو آپلود کن
+      imageUrls = [];
+      for (const img of images) {
+        if (typeof img === "string" && img.startsWith("data:image/")) {
+          const uploadResponse = await cloudinary.uploader.upload(img);
+          imageUrls.push(uploadResponse.secure_url);
+        } else if (typeof img === "string" && img.startsWith("http")) {
+          imageUrls.push(img); // اگر لینک قبلی باشه، نگهش داریم
+        }
+      }
+    }
+
+    // بروزرسانی فیلدها
+    property.title = title || property.title;
+    property.type = type || property.type;
+    property.price = price || property.price;
+    property.rentPrice = rentPrice || property.rentPrice;
+    property.mortgagePrice = mortgagePrice || property.mortgagePrice;
+    property.phoneNumber = phoneNumber || property.phoneNumber;
+    property.location = location || property.location;
+    property.description = description || property.description;
+    property.area = area || property.area;
+    property.city = city || property.city;
+    property.images = imageUrls;
+
+    await property.save();
+
+    res.json({ message: "آگهی ملک با موفقیت بروزرسانی شد", property });
+  } catch (error) {
+    console.error("error updating property", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+// get property by id
+router.get("/:id", protectRoute, async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id).populate("user", "username profileImage");
+    if (!property) return res.status(404).json({ message: "ملک پیدا نشد" });
+
+    res.json(property);
+  } catch (error) {
+    console.error("error fetching property", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+
 export default router;
 
