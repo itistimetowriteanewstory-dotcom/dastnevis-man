@@ -217,4 +217,73 @@ router.get("/user", protectRoute, async (req, res) =>{
     }
 });
 
+// update job
+router.put("/:id", protectRoute, async (req, res) => {
+  try {
+    const { 
+      title, caption, images, phoneNumber, jobtitle, 
+      income, location, workingHours, paymentType 
+    } = req.body;
+
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: "شغل پیدا نشد" });
+
+    // فقط صاحب آگهی اجازه ویرایش دارد
+    if (job.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "دسترسی غیر مجاز" });
+    }
+
+    let imageUrls = job.images;
+
+    // اگر تصاویر جدید فرستاده شده باشند
+    if (images && Array.isArray(images)) {
+      if (images.length > 5) {
+        return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+      }
+
+      // 🔹 اول تصاویر قبلی رو از Cloudinary پاک کن
+      if (job.images && job.images.length > 0) {
+        for (const img of job.images) {
+          try {
+            const publicId = img.split("/").pop().split(".")[0]; 
+            await cloudinary.uploader.destroy(publicId);
+          } catch (deleteError) {
+            console.log("error deleting old image from cloudinary", deleteError);
+          }
+        }
+      }
+
+      // 🔹 بعد تصاویر جدید رو آپلود کن
+      imageUrls = [];
+      for (const img of images) {
+        if (typeof img === "string" && img.startsWith("data:image/")) {
+          const uploadResponse = await cloudinary.uploader.upload(img);
+          imageUrls.push(uploadResponse.secure_url);
+        } else if (typeof img === "string" && img.startsWith("http")) {
+          imageUrls.push(img); // اگر لینک قبلی باشه، نگهش داریم
+        }
+      }
+    }
+
+    // بروزرسانی فیلدها
+    job.title = title || job.title;
+    job.caption = caption || job.caption;
+    job.images = imageUrls;
+    job.phoneNumber = phoneNumber || job.phoneNumber;
+    job.jobtitle = jobtitle || job.jobtitle;
+    job.income = income || job.income;
+    job.location = location || job.location;
+    job.workingHours = workingHours || job.workingHours;
+    job.paymentType = paymentType || job.paymentType;
+
+    await job.save();
+
+    res.json({ message: "آگهی با موفقیت بروزرسانی شد", job });
+  } catch (error) {
+    console.error("error updating job", error);
+    res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
+  }
+});
+
+
 export default router;
