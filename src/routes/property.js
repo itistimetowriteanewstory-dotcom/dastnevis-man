@@ -297,6 +297,25 @@ for (const img of images) {
     property.city = city || property.city;
     property.images = imageUrls;
 
+    if (property.type === "sale") {
+  property.price = price || property.price;
+  property.rentPrice = undefined;
+  property.mortgagePrice = undefined;
+} else if (property.type === "rent") {
+  property.rentPrice = rentPrice || property.rentPrice;
+  property.price = undefined;
+  property.mortgagePrice = undefined;
+} else if (property.type === "mortgage") {
+  property.mortgagePrice = mortgagePrice || property.mortgagePrice;
+  property.price = undefined;
+  property.rentPrice = undefined;
+} else if (property.type === "rent_mortgage") {
+  property.rentPrice = rentPrice || property.rentPrice;
+  property.mortgagePrice = mortgagePrice || property.mortgagePrice;
+  property.price = undefined;
+}
+
+
     await property.save();
 
     res.json({ message: "آگهی ملک با موفقیت بروزرسانی شد", property });
