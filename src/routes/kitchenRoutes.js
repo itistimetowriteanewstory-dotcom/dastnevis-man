@@ -237,37 +237,39 @@ router.put("/:id", protectRoute, async (req, res) => {
       return res.status(401).json({ message: "دسترسی غیر مجاز" });
     }
 
-    let imageUrls = home.images;
+   let imageUrls = home.images || [];
 
-    // اگر تصاویر جدید فرستاده شده باشند
-    if (images && Array.isArray(images)) {
-      if (images.length > 5) {
-        return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
-      }
+if (images && Array.isArray(images)) {
+  if (images.length > 5) {
+    return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+  }
 
-      // 🔹 اول تصاویر قبلی رو از Cloudinary پاک کن
-      if (home.images && home.images.length > 0) {
-        for (const img of home.images) {
-          try {
-            const publicId = img.split("/").pop().split(".")[0]; 
-            await cloudinary.uploader.destroy(publicId);
-          } catch (deleteError) {
-            console.log("error deleting old image from cloudinary", deleteError);
-          }
-        }
-      }
+  // 🔹 پیدا کردن عکس‌هایی که کاربر حذف کرده
+  const newImageSet = new Set(images);
+  const removedImages = imageUrls.filter(img => !newImageSet.has(img));
 
-      // 🔹 بعد تصاویر جدید رو آپلود کن
-      imageUrls = [];
-      for (const img of images) {
-        if (typeof img === "string" && img.startsWith("data:image/")) {
-          const uploadResponse = await cloudinary.uploader.upload(img);
-          imageUrls.push(uploadResponse.secure_url);
-        } else if (typeof img === "string" && img.startsWith("http")) {
-          imageUrls.push(img); // اگر لینک قبلی باشه، نگهش داریم
-        }
-      }
+  // 🔹 فقط عکس‌های حذف‌شده رو پاک کن
+  for (const img of removedImages) {
+    try {
+      const publicId = img.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(publicId);
+    } catch (deleteError) {
+      console.log("error deleting old image from cloudinary", deleteError);
     }
+  }
+
+  // 🔹 ساخت لیست جدید تصاویر
+  imageUrls = [];
+  for (const img of images) {
+    if (typeof img === "string" && img.startsWith("data:image/")) {
+      const uploadResponse = await cloudinary.uploader.upload(img);
+      imageUrls.push(uploadResponse.secure_url);
+    } else if (typeof img === "string" && img.startsWith("http")) {
+      imageUrls.push(img); // لینک قبلی نگه داشته میشه
+    }
+  }
+}
+
 
     // بروزرسانی فیلدها
     home.title = title || home.title;

@@ -266,21 +266,16 @@ router.put("/:id", protectRoute, async (req, res) => {
         }
       }
 
-      // 🔹 ساخت لیست جدید تصاویر
-      imageUrls = [];
-      for (const img of images) {
-        if (typeof img === "string" && img.startsWith("data:image/")) {
-          const uploadResponse = await cloudinary.uploader.upload(img);
-          imageUrls.push({
-            url: uploadResponse.secure_url,
-            public_id: uploadResponse.public_id
-          });
-        } else if (typeof img === "string" && img.startsWith("http")) {
-          // نگه داشتن لینک قبلی
-          imageUrls.push({ url: img });
-        }
-      }
-    }
+     imageUrls = [];
+for (const img of images) {
+  if (typeof img === "string" && img.startsWith("data:image/")) {
+    const uploadResponse = await cloudinary.uploader.upload(img);
+    imageUrls.push(uploadResponse.secure_url); // فقط لینک ذخیره میشه
+  } else if (typeof img === "string" && img.startsWith("http")) {
+    imageUrls.push(img); // لینک قبلی نگه داشته میشه
+  }
+}
+}
 
     // اعتبارسنجی نوع آگهی
     const validTypes = ["sale", "rent", "mortgage", "rent_mortgage"];
