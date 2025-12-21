@@ -231,7 +231,8 @@ router.get("/user", protectRoute, async (req, res) => {
 router.put("/:id", protectRoute, async (req, res) => {
   try {
     const { 
-      title, type, price, rentPrice, mortgagePrice, phoneNumber, location, description, images, area, city 
+      title, type, price, rentPrice, mortgagePrice, phoneNumber, 
+      location, description, images, area, city 
     } = req.body;
 
     const property = await Property.findById(req.params.id);
@@ -242,7 +243,7 @@ router.put("/:id", protectRoute, async (req, res) => {
       return res.status(401).json({ message: "دسترسی غیر مجاز" });
     }
 
-    let imageUrls = property.images;
+    let imageUrls = property.images || [];
 
     // اگر تصاویر جدید فرستاده شده باشند
     if (images && Array.isArray(images)) {
@@ -250,33 +251,47 @@ router.put("/:id", protectRoute, async (req, res) => {
         return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
       }
 
-      // 🔹 اول تصاویر قبلی رو از Cloudinary پاک کن
-      if (property.images && property.images.length > 0) {
-        for (const img of property.images) {
-          try {
-            const publicId = img.split("/").pop().split(".")[0]; 
-            await cloudinary.uploader.destroy(publicId);
-          } catch (deleteError) {
-            console.log("error deleting old image from cloudinary", deleteError);
+      // 🔹 پیدا کردن عکس‌هایی که حذف شده‌اند
+      const newImageSet = new Set(images);
+      const removedImages = imageUrls.filter(img => !newImageSet.has(img));
+
+      // 🔹 فقط عکس‌های حذف‌شده رو پاک کن
+      for (const img of removedImages) {
+        try {
+          if (img.public_id) {
+            await cloudinary.uploader.destroy(img.public_id);
           }
+        } catch (deleteError) {
+          console.log("error deleting old image from cloudinary", deleteError);
         }
       }
 
-      // 🔹 بعد تصاویر جدید رو آپلود کن
+      // 🔹 ساخت لیست جدید تصاویر
       imageUrls = [];
       for (const img of images) {
         if (typeof img === "string" && img.startsWith("data:image/")) {
           const uploadResponse = await cloudinary.uploader.upload(img);
-          imageUrls.push(uploadResponse.secure_url);
+          imageUrls.push({
+            url: uploadResponse.secure_url,
+            public_id: uploadResponse.public_id
+          });
         } else if (typeof img === "string" && img.startsWith("http")) {
-          imageUrls.push(img); // اگر لینک قبلی باشه، نگهش داریم
+          // نگه داشتن لینک قبلی
+          imageUrls.push({ url: img });
         }
       }
     }
 
+    // اعتبارسنجی نوع آگهی
+    const validTypes = ["sale", "rent", "mortgage", "rent_mortgage"];
+    let finalType = property.type;
+    if (type && validTypes.includes(type)) {
+      finalType = type;
+    }
+
     // بروزرسانی فیلدها
     property.title = title || property.title;
-    property.type = type || property.type;
+    property.type = finalType;
     property.price = price || property.price;
     property.rentPrice = rentPrice || property.rentPrice;
     property.mortgagePrice = mortgagePrice || property.mortgagePrice;
@@ -299,8 +314,12 @@ router.put("/:id", protectRoute, async (req, res) => {
 // get property by id
 router.get("/:id", protectRoute, async (req, res) => {
   try {
-    const property = await Property.findById(req.params.id).populate("user", "username profileImage");
-    if (!property) return res.status(404).json({ message: "ملک پیدا نشد" });
+    const property = await Property.findById(req.params.id)
+      .populate("user", "username profileImage"); // فقط فیلدهای لازم از کاربر
+
+    if (!property) {
+      return res.status(404).json({ message: "ملک پیدا نشد" });
+    }
 
     res.json(property);
   } catch (error) {
