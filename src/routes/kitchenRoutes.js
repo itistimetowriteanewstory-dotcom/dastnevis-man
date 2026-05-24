@@ -137,11 +137,10 @@ if (location && location !== ignoreValue) {
 }
 
 if (status && status !== ignoreValue) {
-  filter.status = { $regex: status, $options: "i" };
-}
+  filter.status = status;
+  }
 
- console.log("status from query:", status);
- console.log("filter.status:", filter.status);
+
 
 // فیلتر جدید برای ابعاد
 if (dimensions && dimensions !== ignoreValue) {
