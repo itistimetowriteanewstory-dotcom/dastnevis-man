@@ -140,6 +140,9 @@ if (status && status !== ignoreValue) {
   filter.status = { $regex: status, $options: "i" };
 }
 
+ console.log("status from query:", status);
+ console.log("filter.status:", filter.status);
+
 // فیلتر جدید برای ابعاد
 if (dimensions && dimensions !== ignoreValue) {
   filter.dimensions = { $regex: dimensions, $options: "i" };
