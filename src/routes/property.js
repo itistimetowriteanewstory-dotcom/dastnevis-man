@@ -4,6 +4,7 @@ import Property from "../models/properties.js";   // مدل جدید املاک
 import protectRoute from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
 import { Expo } from "expo-server-sdk";
+import NotificationStatus from "../models/NotificationStatus.js";
 const expo = new Expo();
 const router = express.Router();
 
@@ -81,42 +82,36 @@ if (images && Array.isArray(images)) {
     await newProperty.save();
 res.status(201).json(newProperty);
 
-// ارسال نوتیف در پس‌زمینه
+
 (async () => {
   try {
-    const today = new Date().toDateString();
+   const status = await NotificationStatus.findOneAndUpdate(
+  { key: "daily_ads_notification" },
+  { $setOnInsert: { lastSentDate: new Date(0) } },
+  { upsert: true, new: true }
+);
 
+const today = new Date().toDateString();
+
+if (status.lastSentDate?.toDateString() === today) {
+  return;
+}
     const users = await User.find({
       expoPushToken: { $exists: true, $ne: null }
-    }).select(
-      "_id expoPushToken lastNotificationDate"
-    );
+    }).select("_id expoPushToken lastNotificationDate");
 
     const messages = [];
     const bulkUpdates = [];
 
     for (const user of users) {
 
-      // به ثبت کننده آگهی ارسال نشود
-      if (user._id.toString() === req.user._id.toString()) {
-        continue;
-      }
+      if (user._id.toString() === req.user._id.toString()) continue;
 
-      // اعتبارسنجی توکن
-      if (
-        !user.expoPushToken ||
-        !Expo.isExpoPushToken(user.expoPushToken)
-      ) {
-        continue;
-      }
+      if (!Expo.isExpoPushToken(user.expoPushToken)) continue;
 
-      const lastDate =
-        user.lastNotificationDate?.toDateString();
+      const lastDate = user.lastNotificationDate?.toDateString();
 
-      // فقط یک اعلان در روز
-      if (lastDate === today) {
-        continue;
-      }
+      if (lastDate === today) continue;
 
       messages.push({
         to: user.expoPushToken,
@@ -129,29 +124,36 @@ res.status(201).json(newProperty);
         updateOne: {
           filter: { _id: user._id },
           update: {
-            $set: {
-              lastNotificationDate: new Date(),
-            },
-          },
-        },
+            $set: { lastNotificationDate: new Date() }
+          }
+        }
       });
     }
 
-    // بروزرسانی گروهی کاربران
+
     if (bulkUpdates.length > 0) {
       await User.bulkWrite(bulkUpdates);
     }
 
-    // ارسال گروهی به Expo
+
     const chunks = expo.chunkPushNotifications(messages);
 
-    for (const chunk of chunks) {
-      try {
-        await expo.sendPushNotificationsAsync(chunk);
-      } catch (err) {
-        console.error("Expo chunk error:", err);
-      }
+    if (chunks.length > 0) {
+  for (const chunk of chunks) {
+    try {
+      await expo.sendPushNotificationsAsync(chunk);
+    } catch (err) {
+      console.error("Expo error:", err);
     }
+  }
+}
+
+    // ⭐ مهم: ثبت اینکه امروز ارسال شد
+    await NotificationStatus.updateOne(
+      { key: "daily_ads_notification" },
+      { $set: { lastSentDate: new Date() } },
+      { upsert: true }
+    );
 
   } catch (error) {
     console.error("Notification error:", error);

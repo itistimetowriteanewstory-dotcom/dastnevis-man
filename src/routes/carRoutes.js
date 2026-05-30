@@ -4,6 +4,7 @@ import Car from "../models/Car.js";   // مدل جدید موتر
 import protectRoute from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
 import { Expo } from "expo-server-sdk";
+import NotificationStatus from "../models/NotificationStatus.js";
   const expo = new Expo();
 const router = express.Router();
 
@@ -86,7 +87,19 @@ res.status(201).json(newCar);
 // ارسال نوتیف در پس‌زمینه
 (async () => {
   try {
-    const today = new Date().toDateString();
+ 
+const status = await NotificationStatus.findOneAndUpdate(
+  { key: "daily_ads_notification" },
+  { $setOnInsert: { lastSentDate: new Date(0) } },
+  { upsert: true, new: true }
+);
+
+const today = new Date().toDateString();
+
+if (status.lastSentDate?.toDateString() === today) {
+  return;
+}
+
 
     const users = await User.find({
       expoPushToken: { $exists: true, $ne: null }
@@ -147,14 +160,15 @@ res.status(201).json(newCar);
     // ارسال گروهی به Expo
     const chunks = expo.chunkPushNotifications(messages);
 
-    for (const chunk of chunks) {
-      try {
-        await expo.sendPushNotificationsAsync(chunk);
-      } catch (err) {
-        console.error("Expo chunk error:", err);
-      }
+   if (chunks.length > 0) {
+  for (const chunk of chunks) {
+    try {
+      await expo.sendPushNotificationsAsync(chunk);
+    } catch (err) {
+      console.error("Expo error:", err);
     }
-
+  }
+}
 
   } catch (error) {
     console.error("Notification error:", error);

@@ -10,6 +10,7 @@ import carRoutes from "./routes/carRoutes.js";
 import kitchenRoutes from "./routes/kitchenRoutes.js";
 import cloutesRoutes from "./routes/cloutesRoutes.js";
 import eatRoutes from "./routes/eatRoutes.js";
+import NotificationStatus from "./models/NotificationStatus.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,9 +37,24 @@ app.use("/api/kitchen", kitchenRoutes);
 app.use("/api/cloutes", cloutesRoutes);
 app.use("/api/eat", eatRoutes);
 
+// اینجا
+const initNotificationStatus = async () => {
+  const exists = await NotificationStatus.findOne({
+    key: "daily_ads_notification"
+  });
 
+  if (!exists) {
+    await NotificationStatus.create({
+      key: "daily_ads_notification",
+      lastSentDate: null
+    });
+  }
+};
+
+initNotificationStatus();
 
 app.listen(PORT, ()=> {
     console.log(`server is running on port ${PORT}`);
     connectDB();
 });
+
