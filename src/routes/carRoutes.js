@@ -17,18 +17,31 @@ router.post("/", protectRoute, async (req, res) => {
     }
 
 
-     let imageUrls = [];
+    let imageUrls = [];
+
 if (images && Array.isArray(images)) {
   if (images.length > 5) {
-    return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+    return res.status(400).json({
+      message: "حداکثر ۵ عکس مجاز است"
+    });
   }
 
-  for (const img of images) {
-    if (typeof img === "string" && img.startsWith("data:image/")) {
-      const uploadResponse = await cloudinary.uploader.upload(img);
-      imageUrls.push(uploadResponse.secure_url);
-    }
-  }
+  const uploadPromises = images
+    .filter(
+      img =>
+        typeof img === "string" &&
+        img.startsWith("data:image/")
+    )
+    .map(img =>
+      cloudinary.uploader.upload(img)
+    );
+
+  const uploadResults =
+    await Promise.all(uploadPromises);
+
+  imageUrls = uploadResults.map(
+    result => result.secure_url
+  );
 }
 
     // محدودیت تعداد آگهی در روز
@@ -110,8 +123,8 @@ res.status(201).json(newCar);
       messages.push({
         to: user.expoPushToken,
         sound: "default",
-        title: "آگهی‌های جدید خودرو",
-        body: "امروز آگهی‌های جدیدی در بخش خودرو ثبت شده‌اند.",
+        title: "آگهی‌های جدید وسایل نقلیه",
+        body: "امروز آگهی‌های جدیدی در بخش وسایل نقلیه ثبت شده‌اند.",
       });
 
       bulkUpdates.push({

@@ -18,19 +18,32 @@ router.post("/", protectRoute, async (req, res) => {
       return res.status(400).json({ message: "عنوان، کپشن، تصویر و موقعیت الزامی هستند" });
     }
 
-     let imageUrls = [];
-      if (images && Array.isArray(images)) {
-        if (images.length > 5) {
-          return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
-        }
-      
-        for (const img of images) {
-          if (typeof img === "string" && img.startsWith("data:image/")) {
-            const uploadResponse = await cloudinary.uploader.upload(img);
-            imageUrls.push(uploadResponse.secure_url);
-          }
-        }
-      }
+    let imageUrls = [];
+
+if (images && Array.isArray(images)) {
+  if (images.length > 5) {
+    return res.status(400).json({
+      message: "حداکثر ۵ عکس مجاز است"
+    });
+  }
+
+  const uploadPromises = images
+    .filter(
+      img =>
+        typeof img === "string" &&
+        img.startsWith("data:image/")
+    )
+    .map(img =>
+      cloudinary.uploader.upload(img)
+    );
+
+  const uploadResults =
+    await Promise.all(uploadPromises);
+
+  imageUrls = uploadResults.map(
+    result => result.secure_url
+  );
+}
 
     // محدودیت تعداد آگهی در روز
     const startOfDay = new Date();

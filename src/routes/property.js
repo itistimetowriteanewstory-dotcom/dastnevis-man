@@ -15,21 +15,32 @@ router.post("/", protectRoute, async (req, res) => {
     if (!title || !type || !location || !phoneNumber || !city) {
       return res.status(400).json({ message: "عنوان، نوع و موقعیت الزامی هستند" });
     }
+let imageUrls = [];
 
-    let imageUrls = [];
 if (images && Array.isArray(images)) {
   if (images.length > 5) {
-    return res.status(400).json({ message: "حداکثر ۵ عکس مجاز است" });
+    return res.status(400).json({
+      message: "حداکثر ۵ عکس مجاز است"
+    });
   }
 
-  for (const img of images) {
-    if (typeof img === "string" && img.startsWith("data:image/")) {
-      const uploadResponse = await cloudinary.uploader.upload(img);
-      imageUrls.push(uploadResponse.secure_url);
-    }
-  }
+  const uploadPromises = images
+    .filter(
+      img =>
+        typeof img === "string" &&
+        img.startsWith("data:image/")
+    )
+    .map(img =>
+      cloudinary.uploader.upload(img)
+    );
+
+  const uploadResults =
+    await Promise.all(uploadPromises);
+
+  imageUrls = uploadResults.map(
+    result => result.secure_url
+  );
 }
-
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
