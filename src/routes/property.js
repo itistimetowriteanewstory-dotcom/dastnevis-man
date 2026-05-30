@@ -4,7 +4,7 @@ import Property from "../models/properties.js";   // مدل جدید املاک
 import protectRoute from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
 import { Expo } from "expo-server-sdk";
-
+const expo = new Expo();
 const router = express.Router();
 
 // 📌 ایجاد آگهی ملک جدید
@@ -68,42 +68,85 @@ if (images && Array.isArray(images)) {
     });
 
     await newProperty.save();
+res.status(201).json(newProperty);
 
-    // 📲 ارسال اعلان (Push Notification) مشابه Job
-    const expo = new Expo();
-    const users = await User.find({});
-    const messages = [];
+// ارسال نوتیف در پس‌زمینه
+(async () => {
+  try {
     const today = new Date().toDateString();
 
-    for (const user of users) {
-      if (!user.expoPushToken || !Expo.isExpoPushToken(user.expoPushToken)) continue;
-      if (user._id.toString() === req.user._id.toString()) continue;
+    const users = await User.find({
+      expoPushToken: { $exists: true, $ne: null }
+    }).select(
+      "_id expoPushToken lastNotificationDate"
+    );
 
-      const lastDate = user.lastNotificationDate?.toDateString();
-      if (lastDate === today && user.notificationCount >= 5) continue;
+    const messages = [];
+    const bulkUpdates = [];
+
+    for (const user of users) {
+
+      // به ثبت کننده آگهی ارسال نشود
+      if (user._id.toString() === req.user._id.toString()) {
+        continue;
+      }
+
+      // اعتبارسنجی توکن
+      if (
+        !user.expoPushToken ||
+        !Expo.isExpoPushToken(user.expoPushToken)
+      ) {
+        continue;
+      }
+
+      const lastDate =
+        user.lastNotificationDate?.toDateString();
+
+      // فقط یک اعلان در روز
+      if (lastDate === today) {
+        continue;
+      }
 
       messages.push({
         to: user.expoPushToken,
         sound: "default",
-        title: "آگهی ملک جدید",
-        body: `یک آگهی جدید "${newProperty.title}" اضافه شد.`,
+        title: "آگهی‌های جدید ملک",
+        body: "امروز آگهی‌های جدیدی در بخش املاک ثبت شده‌اند.",
       });
 
-      user.notificationCount = lastDate === today ? user.notificationCount + 1 : 1;
-      user.lastNotificationDate = new Date();
-      await user.save();
+      bulkUpdates.push({
+        updateOne: {
+          filter: { _id: user._id },
+          update: {
+            $set: {
+              lastNotificationDate: new Date(),
+            },
+          },
+        },
+      });
     }
 
-    if (messages.length > 0) {
+    // بروزرسانی گروهی کاربران
+    if (bulkUpdates.length > 0) {
+      await User.bulkWrite(bulkUpdates);
+    }
+
+    // ارسال گروهی به Expo
+    const chunks = expo.chunkPushNotifications(messages);
+
+    for (const chunk of chunks) {
       try {
-        const ticketChunk = await expo.sendPushNotificationsAsync(messages);
-        console.log("Expo tickets:", ticketChunk);
-      } catch (error) {
-        console.error("Error sending notifications:", error);
+        await expo.sendPushNotificationsAsync(chunk);
+      } catch (err) {
+        console.error("Expo chunk error:", err);
       }
     }
 
-    res.status(201).json(newProperty);
+  } catch (error) {
+    console.error("Notification error:", error);
+  }
+})();
+    
   } catch (error) {
     console.error("error creating property", error);
     res.status(500).json({ message: error.message });

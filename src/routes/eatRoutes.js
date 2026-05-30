@@ -1,7 +1,11 @@
 import express from "express";
 import cloudinary from "../lib/cloudinary.js";
-import Eat from "../models/Eat.js";   // مدل جدید غذا/خوراکی
+import Eat from "../models/Eat.js";   // مدل جدید غذا/مواد غذایی
 import protectRoute from "../middleware/auth.middleware.js";
+import User from "../models/User.js";
+import { Expo } from "expo-server-sdk";
+
+const expo = new Expo();
 
 const router = express.Router();
 
@@ -60,6 +64,76 @@ router.post("/", protectRoute, async (req, res) => {
 
     await newEat.save();
     res.status(201).json(newEat);
+    (async () => {
+  try {
+    const today = new Date().toDateString();
+
+    const users = await User.find({
+      expoPushToken: { $exists: true, $ne: null }
+    }).select(
+      "_id expoPushToken lastNotificationDate"
+    );
+
+    const messages = [];
+    const bulkUpdates = [];
+
+    for (const user of users) {
+
+      if (user._id.toString() === req.user._id.toString()) {
+        continue;
+      }
+
+      if (
+        !user.expoPushToken ||
+        !Expo.isExpoPushToken(user.expoPushToken)
+      ) {
+        continue;
+      }
+
+      const lastDate =
+        user.lastNotificationDate?.toDateString();
+
+      if (lastDate === today) {
+        continue;
+      }
+
+      messages.push({
+        to: user.expoPushToken,
+        sound: "default",
+        title: "آگهی‌های جدید غذا",
+        body: "امروز آگهی‌های جدیدی در بخش غذا ثبت شده‌اند.",
+      });
+
+      bulkUpdates.push({
+        updateOne: {
+          filter: { _id: user._id },
+          update: {
+            $set: {
+              lastNotificationDate: new Date(),
+            },
+          },
+        },
+      });
+    }
+
+    if (bulkUpdates.length > 0) {
+      await User.bulkWrite(bulkUpdates);
+    }
+
+    const chunks = expo.chunkPushNotifications(messages);
+
+    for (const chunk of chunks) {
+      try {
+        await expo.sendPushNotificationsAsync(chunk);
+      } catch (err) {
+        console.error("Expo chunk error:", err);
+      }
+    }
+
+  } catch (error) {
+    console.error("Notification error:", error);
+  }
+})();
   } catch (error) {
     console.error("error creating eat", error);
     res.status(500).json({ message: error.message });
@@ -80,11 +154,11 @@ router.get("/", protectRoute, async (req, res) => {
     const filter = {};
     const ignoreValue = "بدون فیلتر"; 
     
-    if (title && title ==! ignoreValue) {
+    if (title && title !== ignoreValue) {
       filter.title = { $regex: title, $options: "i" };
     }
 
-    if (location && location ==! ignoreValue) {
+    if (location && location !== ignoreValue) {
       filter.location = { $regex: location, $options: "i" };
     }
 

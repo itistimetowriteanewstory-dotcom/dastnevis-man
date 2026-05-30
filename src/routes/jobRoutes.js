@@ -5,7 +5,7 @@ import protectRoute from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
 import { Expo } from "expo-server-sdk";
 
-
+const expo = new Expo();
 
 const router = express.Router();
 
@@ -68,44 +68,89 @@ router.post("/", protectRoute, async (req, res) => {
 
   await newJob.save();
 
-  const expo = new Expo();
+ 
 
-// بعد از ذخیره 
-const users = await User.find({}); // یا فیلتر خاصی برای کاربران فعال
+// پاسخ سریع به فرانت
+res.status(201).json(newJob);
 
-const messages = [];
-const today = new Date().toDateString();
+// ارسال نوتیف در پس‌زمینه
+(async () => {
+  try {
+    const today = new Date().toDateString();
 
-for (const user of users) {
-  if (!user.expoPushToken || !Expo.isExpoPushToken(user.expoPushToken)) continue;
+    const users = await User.find({
+      expoPushToken: { $exists: true, $ne: null }
+    }).select(
+      "_id expoPushToken lastNotificationDate"
+    );
 
-  const lastDate = user.lastNotificationDate?.toDateString();
+    const messages = [];
+    const bulkUpdates = [];
 
-  if (user._id.toString() === req.user._id.toString()) continue;
+    for (const user of users) {
 
-  // اگر امروز نوتیف داده شده و تعدادش به ۵ رسیده، دیگه نفرست
-  if (lastDate === today && user.notificationCount >= 5) continue;
+      // به سازنده شغل نده
+      if (user._id.toString() === req.user._id.toString()) {
+        continue;
+      }
 
-  messages.push({
-    to: user.expoPushToken,
-    sound: 'default',
-    title: 'شغل جدیدی اضافه شد',
-    body: `شغل جدیدی "${newJob.title}" به لیست اضافه شد.`,
-  });
+      // اعتبار توکن
+      if (
+        !user.expoPushToken ||
+        !Expo.isExpoPushToken(user.expoPushToken)
+      ) {
+        continue;
+      }
 
-  // اگر امروز نوتیف داده شده، شمارنده رو زیاد کن، وگرنه از ۱ شروع کن
-  user.notificationCount = (lastDate === today) ? user.notificationCount + 1 : 1;
-  user.lastNotificationDate = new Date();
-  await user.save();
-}
+      const lastDate =
+        user.lastNotificationDate?.toDateString();
+
+      // فقط یک اعلان در روز
+      if (lastDate === today) {
+        continue;
+      }
+
+      messages.push({
+        to: user.expoPushToken,
+        sound: "default",
+        title: "فرصت‌های شغلی جدید",
+        body: "امروز فرصت‌های شغلی جدیدی به سامانه اضافه شده‌اند.",
+      });
+
+      bulkUpdates.push({
+        updateOne: {
+          filter: { _id: user._id },
+          update: {
+            $set: {
+              lastNotificationDate: new Date(),
+            },
+          },
+        },
+      });
+    }
+
+    // بروزرسانی کاربران به صورت گروهی
+    if (bulkUpdates.length > 0) {
+      await User.bulkWrite(bulkUpdates);
+    }
+
+    // ارسال گروهی به Expo
+    const chunks = expo.chunkPushNotifications(messages);
+
+    for (const chunk of chunks) {
+      try {
+        await expo.sendPushNotificationsAsync(chunk);
+      } catch (err) {
+        console.error("Expo chunk error:", err);
+      }
+    }
+
+  } catch (error) {
+    console.error("Notification error:", error);
+  }
+})();
 
 
-
-
-
-
-
-  res.status(201).json(newJob)
 
     } catch (error) {
         console.log("error creating job ", error);

@@ -1,13 +1,13 @@
 import express from "express";
 import cloudinary from "../lib/cloudinary.js";
-import Car from "../models/Car.js";   // مدل جدید خودرو
+import Car from "../models/Car.js";   // مدل جدید موتر
 import protectRoute from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
 import { Expo } from "expo-server-sdk";
-
+  const expo = new Expo();
 const router = express.Router();
 
-// 📌 ایجاد آگهی خودرو جدید
+// 📌 ایجاد آگهی موتر جدید
 router.post("/", protectRoute, async (req, res) => {
   try {
     const { title, caption, images, model, brand, fuelType, phoneNumber, carcard, price, location, adType } = req.body;
@@ -45,7 +45,7 @@ if (images && Array.isArray(images)) {
 
     if (countToday >= 5) {
       return res.status(400).json({
-        message: "شما امروز حداکثر ۵ آگهی خودرو می‌توانید ثبت کنید"
+        message: "شما امروز حداکثر ۵ آگهی موتر می‌توانید ثبت کنید"
       });
     }
 
@@ -67,45 +67,91 @@ if (images && Array.isArray(images)) {
 
     await newCar.save();
 
-    // 📲 ارسال اعلان (Push Notification)
-    const expo = new Expo();
-    const users = await User.find({});
-    const messages = [];
+// پاسخ سریع به فرانت
+res.status(201).json(newCar);
+
+// ارسال نوتیف در پس‌زمینه
+(async () => {
+  try {
     const today = new Date().toDateString();
 
-    for (const user of users) {
-      if (!user.expoPushToken || !Expo.isExpoPushToken(user.expoPushToken)) continue;
-      if (user._id.toString() === req.user._id.toString()) continue;
+    const users = await User.find({
+      expoPushToken: { $exists: true, $ne: null }
+    }).select(
+      "_id expoPushToken lastNotificationDate"
+    );
 
-      const lastDate = user.lastNotificationDate?.toDateString();
-      if (lastDate === today && user.notificationCount >= 2) continue;
+    const messages = [];
+    const bulkUpdates = [];
+
+    for (const user of users) {
+
+      // به ثبت کننده آگهی ارسال نشود
+      if (user._id.toString() === req.user._id.toString()) {
+        continue;
+      }
+
+      // اعتبارسنجی توکن
+      if (
+        !user.expoPushToken ||
+        !Expo.isExpoPushToken(user.expoPushToken)
+      ) {
+        continue;
+      }
+
+      const lastDate =
+        user.lastNotificationDate?.toDateString();
+
+      // فقط یک بار در روز
+      if (lastDate === today) {
+        continue;
+      }
 
       messages.push({
         to: user.expoPushToken,
         sound: "default",
-        title: "آگهی جدیدی برای وسایل نقلیه ثبت شد",
-        body: `یک آگهی جدید "${newCar.title}" اضافه شد.`,
+        title: "آگهی‌های جدید خودرو",
+        body: "امروز آگهی‌های جدیدی در بخش خودرو ثبت شده‌اند.",
       });
 
-      user.notificationCount = lastDate === today ? user.notificationCount + 1 : 1;
-      user.lastNotificationDate = new Date();
-      await user.save();
+      bulkUpdates.push({
+        updateOne: {
+          filter: { _id: user._id },
+          update: {
+            $set: {
+              lastNotificationDate: new Date(),
+            },
+          },
+        },
+      });
     }
 
-    if (messages.length > 0) {
+    // بروزرسانی گروهی کاربران
+    if (bulkUpdates.length > 0) {
+      await User.bulkWrite(bulkUpdates);
+    }
+
+    // ارسال گروهی به Expo
+    const chunks = expo.chunkPushNotifications(messages);
+
+    for (const chunk of chunks) {
       try {
-        const ticketChunk = await expo.sendPushNotificationsAsync(messages);
-        console.log("Expo tickets:", ticketChunk);
-      } catch (error) {
-        console.error("Error sending notifications:", error);
+        await expo.sendPushNotificationsAsync(chunk);
+      } catch (err) {
+        console.error("Expo chunk error:", err);
       }
     }
 
-    res.status(201).json(newCar);
+
   } catch (error) {
-    console.error("error creating car", error);
-    res.status(500).json({ message: error.message });
+    console.error("Notification error:", error);
   }
+})();
+
+} catch (error) {
+  console.error("error creating car", error);
+  res.status(500).json({ message: error.message });
+}
 });
 
 
@@ -161,11 +207,11 @@ if (title && title !== ignoreValue) {
 
 
 
-// 📌 حذف آگهی خودرو
+// 📌 حذف آگهی موتر
 router.delete("/:id", protectRoute, async (req, res) => {
   try {
     const car = await Car.findById(req.params.id);
-    if (!car) return res.status(404).json({ message: "خودرو پیدا نشد" });
+    if (!car) return res.status(404).json({ message: "موتر پیدا نشد" });
 
     if (car.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: "دسترسی غیر مجاز" });
@@ -184,7 +230,7 @@ if (car.images && car.images.length > 0) {
 }
 
     await car.deleteOne();
-    res.json({ message: "خودرو با موفقیت حذف شد" });
+    res.json({ message: "موتر با موفقیت حذف شد" });
   } catch (error) {
     console.error("error deleting car", error);
     res.status(500).json({ message: "خطای سرور" });
@@ -210,7 +256,7 @@ router.put("/:id", protectRoute, async (req, res) => {
     } = req.body;
 
     const car = await Car.findById(req.params.id);
-    if (!car) return res.status(404).json({ message: "خودرو پیدا نشد" });
+    if (!car) return res.status(404).json({ message: "موتر پیدا نشد" });
 
     // فقط صاحب آگهی اجازه ویرایش دارد
     if (car.user.toString() !== req.user._id.toString()) {
@@ -267,7 +313,7 @@ if (images && Array.isArray(images)) {
 
     await car.save();
 
-    res.json({ message: "آگهی خودرو با موفقیت بروزرسانی شد", car });
+    res.json({ message: "آگهی موتر با موفقیت بروزرسانی شد", car });
   } catch (error) {
     console.error("error updating car", error);
     res.status(500).json({ message: "خطای سرور لطفا بعدا امتحان کنید" });
@@ -278,7 +324,7 @@ if (images && Array.isArray(images)) {
 router.get("/:id", protectRoute, async (req, res) => {
   try {
     const car = await Car.findById(req.params.id).populate("user", "username profileImage");
-    if (!car) return res.status(404).json({ message: "خودرو پیدا نشد" });
+    if (!car) return res.status(404).json({ message: "موتر پیدا نشد" });
 
     res.json(car);
   } catch (error) {
