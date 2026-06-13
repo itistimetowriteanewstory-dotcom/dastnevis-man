@@ -37,6 +37,10 @@ app.use("/api/kitchen", kitchenRoutes);
 app.use("/api/cloutes", cloutesRoutes);
 app.use("/api/eat", eatRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Server is alive");
+});
+
 // اینجا
 const initNotificationStatus = async () => {
   const exists = await NotificationStatus.findOne({
