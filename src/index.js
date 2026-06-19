@@ -13,7 +13,7 @@ import eatRoutes from "./routes/eatRoutes.js";
 import NotificationStatus from "./models/NotificationStatus.js";
 
 const app = express();
-app.set("trust proxy", 1);
+app.set("trust proxy", true);
 const PORT = process.env.PORT || 3000;
 
 
