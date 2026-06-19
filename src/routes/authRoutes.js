@@ -21,6 +21,9 @@ const loginLimiter = rateLimit({
   message: "تعداد تلاش‌های ورود بیش از حد مجاز است. لطفاً فردا دوباره امتحان کنید.",
   standardHeaders: true,
   legacyHeaders: false,
+   keyGenerator: (req) => {
+    return req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
+  },
 });
 
 const registerLimiter = rateLimit({
@@ -29,6 +32,9 @@ const registerLimiter = rateLimit({
   message: "تعداد تلاش‌های ثبت‌نام بیش از حد مجاز است. لطفاً فردا دوباره امتحان کنید.",
   standardHeaders: true,
   legacyHeaders: false,
+   keyGenerator: (req) => {
+    return req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
+  },
 });
 
 
