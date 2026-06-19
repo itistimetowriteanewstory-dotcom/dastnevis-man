@@ -97,6 +97,8 @@ const profileImage = `https://api.dicebear.com/9.x/initials/svg?seed=${username}
 });
 
 router.post("/login", loginLimiter, async (req, res) => {
+    console.log("IP:", req.ip);
+  console.log("X-Forwarded-For:", req.headers["x-forwarded-for"]);
   try {
     const {email, password} = req.body;
     if(!email || !password) return res.status(400).json({message:"همه خانه هارا پر کنید"});
