@@ -185,10 +185,7 @@ router.post("/refresh", async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.JWT_REFRESH_SECRET
-    );
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
     const user = await User.findById(decoded.userId);
 
@@ -197,37 +194,29 @@ router.post("/refresh", async (req, res) => {
         message: "کاربر پیدا نشد"
       });
     }
- // 🔥🔥🔥 اینجا باید شرط کاربران قدیمی را اضافه کنی
+
+    // کاربر قدیمی که refreshToken توی دیتابیس نداره
     if (!user.refreshToken) {
-      user.refreshToken = refreshToken; // اولین بار ذخیره می‌شود
+      user.refreshToken = refreshToken;
       await user.save();
 
     } else if (
-  user.refreshToken !== refreshToken &&
-  user.previousRefreshToken !== refreshToken
-   )
-    { 
+      user.refreshToken !== refreshToken &&
+      user.previousRefreshToken !== refreshToken
+    ) {
       return res.status(401).json({
         message: "رفرش توکن معتبر نیست"
       });
     }
 
-    // ساخت توکن‌های جدید
+    // فقط accessToken جدید میسازیم
+    // refreshToken عوض نمیشه تا کاربران قدیمی مشکل نداشته باشن
     const newAccessToken = generateAccessToken(user._id);
-
-    const newRefreshToken = generateRefreshToken(user._id);
-
-    // ذخیره توکن قبلی
-    user.previousRefreshToken = user.refreshToken;
-
-
-    // ذخیره رفرش جدید
-    user.refreshToken = newRefreshToken;
-    await user.save();
+    
 
     res.status(200).json({
       accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
+      refreshToken: refreshToken, // ← همون قدیمی برمیگرده
     });
 
   } catch (error) {
