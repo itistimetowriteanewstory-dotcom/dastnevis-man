@@ -11,6 +11,7 @@ import kitchenRoutes from "./routes/kitchenRoutes.js";
 import cloutesRoutes from "./routes/cloutesRoutes.js";
 import eatRoutes from "./routes/eatRoutes.js";
 import NotificationStatus from "./models/NotificationStatus.js";
+import appRoutes from "./routes/appRoutes.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -37,6 +38,7 @@ app.use("/api/car", carRoutes);
 app.use("/api/kitchen", kitchenRoutes);
 app.use("/api/cloutes", cloutesRoutes);
 app.use("/api/eat", eatRoutes);
+app.use("/api/app", appRoutes);  
 
 app.get("/", (req, res) => {
   res.send("Server is alive");

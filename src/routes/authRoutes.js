@@ -14,6 +14,7 @@ const generateRefreshToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
 };
 
+
 // 🔹 اینجا تعریف کن
 const loginLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // ۲۴ ساعت
@@ -82,10 +83,16 @@ const profileImage = `https://api.dicebear.com/9.x/initials/svg?seed=${username}
         profileImage,
        });
 
-       await user.save();
+     //  await user.save();
 
         const accessToken = generateAccessToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
+
+        user.previousRefreshToken = null;
+// رفرش توکن روتیشن
+    user.refreshToken = refreshToken;
+    await user.save();
+
        res.status(201).json({
           accessToken,
           refreshToken,
@@ -123,11 +130,16 @@ router.post("/login", loginLimiter, async (req, res) => {
      const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
+    user.previousRefreshToken = null;
+    //رفرش توکن روتیشن
+    user.refreshToken = refreshToken;
+   await user.save();
+
     res.status(200).json({
          accessToken,
          refreshToken,
         user: {
-            id: user._id,
+            _id: user._id,
             username: user.username,
             email: user.email,
             profileImage: user.profileImage,
@@ -165,19 +177,89 @@ router.post("/save-token", protectRoute, async (req, res) => {
 
 router.post("/refresh", async (req, res) => {
   const { refreshToken } = req.body;
-  if (!refreshToken) return res.status(401).json({ message: "رفرش توکن ارسال نشده" });
+
+  if (!refreshToken) {
+    return res.status(401).json({
+      message: "رفرش توکن ارسال نشده"
+    });
+  }
 
   try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(decoded.userId);
-    if (!user) return res.status(401).json({ message: "کاربر یافت نشد" });
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET
+    );
 
+    const user = await User.findById(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({
+        message: "کاربر پیدا نشد"
+      });
+    }
+ // 🔥🔥🔥 اینجا باید شرط کاربران قدیمی را اضافه کنی
+    if (!user.refreshToken) {
+      user.refreshToken = refreshToken; // اولین بار ذخیره می‌شود
+      await user.save();
+
+    } else if (
+  user.refreshToken !== refreshToken &&
+  user.previousRefreshToken !== refreshToken
+   )
+    { 
+      return res.status(401).json({
+        message: "رفرش توکن معتبر نیست"
+      });
+    }
+
+    // ساخت توکن‌های جدید
     const newAccessToken = generateAccessToken(user._id);
-    res.json({ accessToken: newAccessToken });
-  } catch (err) {
-    return res.status(401).json({ message: "رفرش توکن نامعتبر یا منقضی شده" });
+
+    const newRefreshToken = generateRefreshToken(user._id);
+
+    // ذخیره توکن قبلی
+    user.previousRefreshToken = user.refreshToken;
+
+
+    // ذخیره رفرش جدید
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    res.status(200).json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+
+  } catch (error) {
+    return res.status(401).json({
+      message: "رفرش توکن منقضی یا نامعتبر است"
+    });
+  }
+});
+
+router.post("/logout", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    const user = await User.findOne({ refreshToken });
+
+    if (user) {
+      user.refreshToken = null;
+      user.previousRefreshToken = null;
+      await user.save();
+    }
+
+    return res.status(200).json({
+      message: "با موفقیت خارج شدید"
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "خطای سرور"
+    });
   }
 });
 
 
 export default router;
+

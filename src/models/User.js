@@ -34,7 +34,15 @@ const userSchema = new mongoose.Schema({
   lastNotificationDate: {
     type: Date,
     default: null
-  }
+  },
+  previousRefreshToken: {
+  type: String,
+  default: null
+},
+  refreshToken: {
+    type: String,
+    default: null,
+}
 }, {timestamps: true});
 
 // hash password before saving user to db
