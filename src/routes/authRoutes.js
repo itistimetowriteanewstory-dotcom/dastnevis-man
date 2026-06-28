@@ -249,6 +249,50 @@ router.post("/logout", async (req, res) => {
   }
 });
 
+router.put("/update-profile", authMiddleware, async (req, res) => {
+  try {
+    const { username, profileImage } = req.body;
+
+    // پیدا کردن کاربر
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "کاربر پیدا نشد" });
+    }
+
+    // اگر username جدید ارسال شده بود
+    if (username) {
+      // چک کنیم نام کاربری تکراری نباشه
+      const existingUser = await User.findOne({ username });
+      if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+        return res.status(400).json({ message: "این نام کاربری قبلاً استفاده شده" });
+      }
+
+      user.username = username;
+    }
+
+    // اگر عکس جدید ارسال شده بود
+    if (profileImage) {
+      user.profileImage = profileImage;
+    }
+
+    await user.save();
+
+    res.json({
+      message: "پروفایل با موفقیت بروزرسانی شد",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        profileImage: user.profileImage,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.log("Error updating profile:", error);
+    res.status(500).json({ message: "خطای سرور" });
+  }
+});
+
 
 export default router;
 
