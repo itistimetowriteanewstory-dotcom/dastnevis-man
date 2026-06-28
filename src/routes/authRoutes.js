@@ -60,11 +60,11 @@ router.post("/register", registerLimiter, async (req, res) => {
         if(username.length < 3){
               return res.status(400).json({message: "اسم باید حداقل چهار کارکتر داشته باشد"});
         }
-        //check if usser exist
-       const existingusername = await User.findOne({username});
-       if(existingusername){
-        return res.status(400).json({message: "نام کاربری وجود دارد با اسم دیگری ثبت نام کنید"});
-       }
+      //   //check if usser exist
+      //  const existingusername = await User.findOne({username});
+      //  if(existingusername){
+      //   return res.status(400).json({message: "نام کاربری وجود دارد با اسم دیگری ثبت نام کنید"});
+      //  }
 
         const existingemail = await User.findOne({email});
        if(existingemail){
@@ -280,10 +280,10 @@ router.put("/update-profile", protectRoute, async (req, res) => {
         });
       }
 
-      const existingUser = await User.findOne({ username });
-      if (existingUser && existingUser._id.toString() !== user._id.toString()) {
-        return res.status(400).json({ message: "این نام کاربری قبلاً استفاده شده است." });
-      }
+      // const existingUser = await User.findOne({ username });
+      // if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+      //   return res.status(400).json({ message: "این نام کاربری قبلاً استفاده شده است." });
+      // }
 
       user.username = username;
 
@@ -311,7 +311,10 @@ router.put("/update-profile", protectRoute, async (req, res) => {
         if (isOldImageCloudinary) {
           try {
             if (user.profileImagePublicId) {
-              await cloudinary.uploader.destroy(user.profileImagePublicId);
+              const publicId = user.profileImagePublicId.includes("/")
+           ? user.profileImagePublicId                       // جدید ✅
+           : `profile_images/${user.profileImagePublicId}`;  // قدیمی ✅
+              await cloudinary.uploader.destroy(publicId);
             } else {
               const parts = user.profileImage.split("/");
               const uploadIndex = parts.indexOf("upload");
