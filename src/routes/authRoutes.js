@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import protectRoute from "../middleware/auth.middleware.js";
 import rateLimit from "express-rate-limit";
-
+import cloudinary from "../lib/cloudinary.js";
 
 const router = express.Router();
 
