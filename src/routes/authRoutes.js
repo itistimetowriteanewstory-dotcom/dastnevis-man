@@ -249,36 +249,95 @@ router.post("/logout", async (req, res) => {
   }
 });
 
-router.put("/update-profile", authMiddleware, async (req, res) => {
+router.put("/update-profile", protectRoute, async (req, res) => {
   try {
-    const { username, profileImage } = req.body;
+    let { username, profileImage, profileImagePublicId } = req.body; // ← اضافه شد
 
-    // پیدا کردن کاربر
-    const user = await User.findById(req.user.id);
+
+    const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "کاربر پیدا نشد" });
     }
 
-    // اگر username جدید ارسال شده بود
-    if (username) {
-      // چک کنیم نام کاربری تکراری نباشه
+    // -----------------------------
+    // بروزرسانی Username
+    // -----------------------------
+    if (username !== undefined) {
+      username = username.trim();
+
+      if (!username) {
+        return res.status(400).json({ message: "نام کاربری نمی‌تواند خالی باشد." });
+      }
+
+      if (username.length < 3 || username.length > 20) {
+        return res.status(400).json({ message: "نام کاربری باید بین 3 تا 20 کاراکتر باشد." });
+      }
+
+      const usernameRegex = /^[\u0600-\u06FFa-zA-Z0-9_]+$/;
+      if (!usernameRegex.test(username)) {
+        return res.status(400).json({
+          message: "نام کاربری فقط می‌تواند شامل حروف فارسی، انگلیسی، اعداد و _ باشد.",
+        });
+      }
+
       const existingUser = await User.findOne({ username });
       if (existingUser && existingUser._id.toString() !== user._id.toString()) {
-        return res.status(400).json({ message: "این نام کاربری قبلاً استفاده شده" });
+        return res.status(400).json({ message: "این نام کاربری قبلاً استفاده شده است." });
       }
 
       user.username = username;
+
+      // ✅ اگه عکس پروفایل هنوز DiceBear هست، seed رو آپدیت کن
+      const isDiceBear = user.profileImage?.includes("dicebear.com");
+      if (isDiceBear) {
+        user.profileImage = `https://api.dicebear.com/9.x/initials/svg?seed=${username}`;
+      }
     }
 
-    // اگر عکس جدید ارسال شده بود
-    if (profileImage) {
-      user.profileImage = profileImage;
+    // -----------------------------
+    // بروزرسانی عکس پروفایل (آپلود واقعی)
+    // -----------------------------
+    if (profileImage !== undefined) {
+      if (profileImage) {
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+        const validPrefix = `https://res.cloudinary.com/${cloudName}/image/upload/`;
+
+        if (!profileImage.startsWith(validPrefix)) {
+          return res.status(400).json({ message: "آدرس تصویر معتبر نیست." });
+        }
+
+        // 🔥 فقط اگه عکس قبلی Cloudinary بود حذفش کن (نه DiceBear)
+        const isOldImageCloudinary = user.profileImage?.startsWith(validPrefix);
+        if (isOldImageCloudinary) {
+          try {
+            if (user.profileImagePublicId) {
+              await cloudinary.uploader.destroy(user.profileImagePublicId);
+            } else {
+              const parts = user.profileImage.split("/");
+              const uploadIndex = parts.indexOf("upload");
+              let startIndex = uploadIndex + 1;
+              if (/^v\d+$/.test(parts[startIndex])) startIndex++;
+              const fileName = parts[parts.length - 1].split(".")[0];
+              const folder = parts.slice(startIndex, parts.length - 1).join("/");
+              const publicId = folder ? `${folder}/${fileName}` : fileName;
+              await cloudinary.uploader.destroy(publicId);
+            }
+          } catch (err) {
+            console.log("خطا در حذف عکس قبلی:", err);
+          }
+        }
+
+        user.profileImage = profileImage;
+        if (profileImagePublicId) {
+        user.profileImagePublicId = profileImagePublicId;  // ← کامنت رو بردار
+          }
+      }
     }
 
     await user.save();
 
-    res.json({
-      message: "پروفایل با موفقیت بروزرسانی شد",
+    return res.status(200).json({
+      message: "پروفایل با موفقیت بروزرسانی شد.",
       user: {
         _id: user._id,
         username: user.username,
@@ -288,8 +347,8 @@ router.put("/update-profile", authMiddleware, async (req, res) => {
       },
     });
   } catch (error) {
-    console.log("Error updating profile:", error);
-    res.status(500).json({ message: "خطای سرور" });
+    console.error("Error updating profile:", error);
+    return res.status(500).json({ message: "خطای سرور" });
   }
 });
 
