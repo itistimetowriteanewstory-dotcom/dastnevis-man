@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import protectRoute from "../middleware/auth.middleware.js";
 import rateLimit from "express-rate-limit";
 import cloudinary from "../lib/cloudinary.js";
+import { OAuth2Client } from "google-auth-library";
+
 
 const router = express.Router();
 
@@ -14,6 +16,7 @@ const generateRefreshToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
 };
 
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // 🔹 اینجا تعریف کن
 const loginLimiter = rateLimit({
@@ -355,6 +358,59 @@ router.put("/update-profile", protectRoute, async (req, res) => {
   }
 });
 
+
+
+router.post("/google", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const { email, name, picture, sub: googleId } = ticket.getPayload();
+
+    let user = await User.findOne({ email });
+    let isNewUser = false;
+
+    if (!user) {
+      // ثبت‌نام خودکار
+      user = new User({
+        username: name,
+        email,
+        profileImage: picture,
+        googleId,
+      });
+      isNewUser = true;
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.previousRefreshToken = null;
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.status(200).json({
+      accessToken,
+      refreshToken,
+      isNewUser,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        profileImage: user.profileImage,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("Google auth error:", error);
+    res.status(401).json({ message: "احراز هویت گوگل ناموفق بود" });
+  }
+});
 
 export default router;
 

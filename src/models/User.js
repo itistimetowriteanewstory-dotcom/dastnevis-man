@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
     username: {
         type: String,
         required: true,
-        
+
     },
     email:{
         type: String,
@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
+        required: false,
         minlength: 6
 
     },
@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
   previousRefreshToken: {
   type: String,
   default: null
+},
+googleId: {
+  type: String,
+  default: null,
 },
   refreshToken: {
     type: String,
